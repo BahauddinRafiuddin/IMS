@@ -43,6 +43,65 @@ import Enrollment from "../models/Enrollment.js";
 //   }
 // };
 
+export const getAdminDashboard = async (req, res) => {
+  try {
+    const companyId = req.user.company;
+
+    // Intern stats
+    const totalInterns = await User.countDocuments({
+      role: "intern",
+      company: companyId
+    });
+
+    const activeInterns = await User.countDocuments({
+      role: "intern",
+      company: companyId,
+      isActive: true
+    });
+
+    // Mentor stats
+    const totalMentors = await User.countDocuments({
+      role: "mentor",
+      company: companyId
+    });
+
+    // Program stats
+    const totalPrograms = await InternshipProgram.countDocuments({
+      company: companyId
+    });
+
+    const activePrograms = await InternshipProgram.countDocuments({
+      company: companyId,
+      status: "active"
+    });
+
+    const completedPrograms = await InternshipProgram.countDocuments({
+      company: companyId,
+      status: "completed"
+    });
+
+    return res.status(200).json({
+      success: true,
+      dashboard: {
+        totalInterns,
+        activeInterns,
+        inactiveInterns: totalInterns - activeInterns,
+        totalMentors,
+        totalPrograms,
+        activePrograms,
+        completedPrograms
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching dashboard data"
+    });
+  }
+};
+
 export const getAllInterns = async (req, res) => {
   try {
     // 1️⃣ Get all interns
@@ -100,10 +159,10 @@ export const getAllInterns = async (req, res) => {
 
 export const getAllMentors = async (req, res) => {
   try {
-    const mentors = await User.find({ role: "mentor" })
+    const mentors = await User.find({ role: "mentor", company: req.user.company })
       .select("name email");
 
-    const programs = await InternshipProgram.find();
+    const programs = await InternshipProgram.find({ company: req.user.company });
 
     const mentorMap = {};
 
@@ -144,7 +203,12 @@ export const deleteMentorById = async (req, res) => {
         message: "Mentor not found"
       });
     }
-
+    if (mentor.company.toString() !== req.user.company.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized"
+      })
+    }
     //  check if mentor assigned to any program
     const assignedProgram = await InternshipProgram.findOne({
       mentor: mentorId
@@ -184,8 +248,15 @@ export const updateInternStatus = async (req, res) => {
     }
 
     const intern = await User.findById(internId)
-    if (!intern || !intern.role == "intern") {
+    if (!intern || intern.role !== "intern") {
       return res.status(404).json({ success: false, message: "Intern Not Found" })
+    }
+
+    if (intern.company.toString() !== req.user.company.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized"
+      });
     }
 
     intern.isActive = isActive
@@ -218,7 +289,7 @@ export const createProgram = async (req, res) => {
       return res.status(400).json({ success: false, message: "Reuired Field Is Not Provided" })
     }
 
-    const exists = await InternshipProgram.findOne({ title });
+    const exists = await InternshipProgram.findOne({ title, company: req.user.company });
     if (exists) {
       return res.status(409).json({
         success: false,
@@ -238,7 +309,8 @@ export const createProgram = async (req, res) => {
       mentor: mentorId,
       durationInWeeks,
       startDate,
-      endDate
+      endDate,
+      company: req.user.company
     })
 
     return res.status(201).json({
@@ -262,8 +334,10 @@ export const createProgram = async (req, res) => {
 export const getAllPrograms = async (req, res) => {
   try {
     const programs = await InternshipProgram.aggregate([
-
-      // 🔹 Join Mentor
+      // Join Mentor
+      {
+        $match: { company: req.user.company }
+      },
       {
         $lookup: {
           from: "users", // mentor collection
@@ -272,7 +346,6 @@ export const getAllPrograms = async (req, res) => {
           as: "mentor"
         }
       },
-
       // Convert mentor array to object
       {
         $unwind: {
@@ -280,7 +353,6 @@ export const getAllPrograms = async (req, res) => {
           preserveNullAndEmptyArrays: true
         }
       },
-
       // 🔹 Join Tasks
       {
         $lookup: {
@@ -350,6 +422,10 @@ export const changeProgramStatus = async (req, res) => {
     const program = await InternshipProgram.findById(progId)
     if (!program) {
       return res.status(404).json({ success: false, message: "Program Not Found" })
+    }
+
+    if (program.company.toString() !== req.user.company.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized" })
     }
 
     const currentStatus = program.status;
@@ -451,6 +527,13 @@ export const updateProgram = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Program not found"
+      });
+    }
+
+    if (program.company.toString() !== req.user.company.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized"
       });
     }
 
@@ -574,60 +657,68 @@ export const updateProgram = async (req, res) => {
 
 export const getAvailableInterns = async (req, res) => {
   try {
-    // All active interns
+    const companyId = req.user.company;
+
+    // All active interns of this company
     const interns = await User.find({
       role: "intern",
-      isActive: true
+      isActive: true,
+      company: companyId
     });
 
-    // Programs that are not completed
-    const activePrograms = await InternshipProgram.find({
-      status: { $in: ["upcoming", "active"] }
+    // Get enrollments for active/upcoming programs
+    const enrollments = await Enrollment.find({
+      status: { $in: ["approved", "in_progress"] }
+    }).populate({
+      path: "program",
+      match: {
+        company: companyId,
+        status: { $in: ["upcoming", "active"] }
+      },
+      select: "_id"
     });
 
-    // Collect all enrolled intern IDs
     const enrolledInternIds = new Set();
 
-    activePrograms.forEach(program => {
-      program.interns.forEach(id => {
-        enrolledInternIds.add(id.intern.toString());
-      });
+    enrollments.forEach(e => {
+      if (e.program) {
+        enrolledInternIds.add(e.intern.toString());
+      }
     });
 
-    // Filter interns not already enrolled
     const availableInterns = interns.filter(
       intern => !enrolledInternIds.has(intern._id.toString())
     );
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       interns: availableInterns
     });
+
   } catch (error) {
-    console.log(error)
     res.status(500).json({
       success: false,
-      message: 'Server Error While Fetching Available Intern For Enrollment'
-    })
+      message: "Server error while fetching available interns"
+    });
   }
-}
+};
 
 
 
 export const createMentor = async (req, res) => {
   try {
-    const { name, email } = req.body
+    const { name, email ,password} = req.body
 
     const existing = await User.findOne({ email })
     if (existing) {
       return res.status(400).json({ success: false, message: "User already exists" })
     }
 
-    const tempPassword = crypto.randomBytes(4).toString("hex")
+    // const tempPassword = crypto.randomBytes(4).toString("hex")
     const mentor = await User.create({
       name,
       email,
-      password: tempPassword,
+      password: password,
       role: "mentor",
       company: req.user.company,
       isActive: true
@@ -640,7 +731,7 @@ export const createMentor = async (req, res) => {
         <h2>Welcome to IMS</h2>
         <p>Your mentor account has been created.</p>
         <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Password:</strong> ${tempPassword}</p>
+        <p><strong>Password:</strong> ${password}</p>
         <p>Please change your password after login.</p>
       `
     )
@@ -659,19 +750,18 @@ export const createMentor = async (req, res) => {
 
 export const createIntern = async (req, res) => {
   try {
-    const { name, email } = req.body
+    const { name, email ,password} = req.body
 
     const existing = await User.findOne({ email })
     if (existing) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const tempPassword = crypto.randomBytes(4).toString("hex")
 
     const intern = await User.create({
       name,
       email,
-      password: tempPassword,
+      password: password,
       role: "intern",
       company: req.user.company,
       isActive: true
@@ -684,7 +774,7 @@ export const createIntern = async (req, res) => {
         <h2>Welcome to IMS Internship Program</h2>
         <p>Your intern account has been created.</p>
         <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Password:</strong> ${tempPassword}</p>
+        <p><strong>Password:</strong> ${password}</p>
         <p>Please change your password after login.</p>
       `
     )
@@ -713,6 +803,12 @@ export const refundPayment = async (req, res) => {
       return res.status(404).json({ message: "Enrollment not found" });
     }
 
+    if (enrollment.program.company.toString() !== req.user.company.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not Your Company program"
+      })
+    }
     // 🔐 Only paid programs
     if (enrollment.program.type !== "paid") {
       return res.status(400).json({

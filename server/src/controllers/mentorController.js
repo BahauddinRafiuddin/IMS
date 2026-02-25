@@ -10,15 +10,15 @@ export const completeInternshipByMentor = async (req, res) => {
     const enrollment = await Enrollment.findById(enrollmentId)
       .populate("program");
 
+    if (!enrollment) {
+      return res.status(404).json({ message: "Enrollment not found" });
+    }
+
     if (enrollment.mentor.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: "You are not assigned to this internship"
-      })
-    }
-
-    if (!enrollment) {
-      return res.status(404).json({ message: "Enrollment not found" });
+      });
     }
 
     if (enrollment.status !== "in_progress") {
@@ -312,7 +312,7 @@ export const getMentorInterns = async (req, res) => {
       status: { $in: ["approved", "in_progress"] }
     })
       .populate("intern", "name email")
-      .populate("program", "title")
+      .populate("program", "title domain durationInWeeks startDate endDate status")
 
     if (!enrollments.length) {
       return res.status(404).json({ success: false, message: "No Interns Found" })
@@ -345,7 +345,8 @@ export const getMentorDashboard = async (req, res) => {
 
     // Programs
     const programs = await InternshipProgram.find({
-      mentor: mentorId
+      mentor: mentorId,
+      company: req.user.company
     });
 
     const totalPrograms = programs.length;
@@ -427,14 +428,31 @@ export const getMentorPrograms = async (req, res) => {
 
     // Programs
     const programs = await InternshipProgram.find({
-      mentor: mentorId
+      mentor: mentorId,
+      company: req.user.company
     })
+
 
     if (!programs.length) {
       return res.status(404).json({ success: false, message: "No Programs Found" })
     }
 
-    return res.status(200).json({ success: true, message: "Mentor Programs Found Successfully", programs })
+    const programsWithInterns = await Promise.all(
+      programs.map(async (program) => {
+        const enrollments = await Enrollment.find({
+          program: program._id,
+          mentor: mentorId,
+          status: "in_progress"
+        }).populate("intern", "name email");
+
+        return {
+          ...program.toObject(),
+          interns: enrollments
+        };
+      })
+    );
+
+    return res.status(200).json({ success: true, message: "Mentor Programs Found Successfully", programs: programsWithInterns })
   } catch (error) {
     console.error(error);
     return res.status(500).json({

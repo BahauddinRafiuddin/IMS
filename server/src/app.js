@@ -10,11 +10,14 @@ import enrollmentRouter from './routes/enrollmentRoutes.js'
 import internRouter from './routes/internRoutes.js'
 import paymentRouter from './routes/paymentRoutes.js'
 import mentorRouter from './routes/mentorRoutes.js'
+import superAdminRouter from './routes/superAdminRoutes.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }));
 
+app.use('/api/superadmin',superAdminRouter)
 app.use('/api/companies',companyRouter)
 app.use('/api/programs',programRouter)
 app.use('/api/enrollments',enrollmentRouter)

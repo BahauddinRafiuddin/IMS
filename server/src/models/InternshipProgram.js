@@ -60,7 +60,7 @@ const internshipProgramSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ["draft", "active", "completed", "upcoming"],
-    default: "draft"
+    default: "upcoming"
   },
   minimumTasksRequired: {
     type: Number,
