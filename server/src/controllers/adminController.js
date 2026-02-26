@@ -119,11 +119,7 @@ export const getAllInterns = async (req, res) => {
     const programs = await Enrollment.find({
       status: { $in: ["approved", "in_progress"] }
     })
-      .populate({
-        path: "intern",
-        match: { company: req.user.company },
-        select: "name email"
-      })
+      .populate("intern", "name email company")
       .populate("mentor", "name email");
 
     // 3️⃣ Map intern → mentor
@@ -707,7 +703,7 @@ export const getAvailableInterns = async (req, res) => {
 
 export const createMentor = async (req, res) => {
   try {
-    const { name, email ,password} = req.body
+    const { name, email, password } = req.body
 
     const existing = await User.findOne({ email })
     if (existing) {
@@ -723,8 +719,11 @@ export const createMentor = async (req, res) => {
       company: req.user.company,
       isActive: true
     })
-
-    await sendEmail(
+    res.status(201).json({
+      success: true,
+      message: "Mentor created and email sent"
+    })
+    sendEmail(
       email,
       "Mentor Account Created",
       `
@@ -735,10 +734,7 @@ export const createMentor = async (req, res) => {
         <p>Please change your password after login.</p>
       `
     )
-    res.status(201).json({
-      success: true,
-      message: "Mentor created and email sent"
-    })
+
   } catch (error) {
     console.log(error)
     res.status(500).json({
@@ -750,14 +746,12 @@ export const createMentor = async (req, res) => {
 
 export const createIntern = async (req, res) => {
   try {
-    const { name, email ,password} = req.body
+    const { name, email, password } = req.body
 
     const existing = await User.findOne({ email })
     if (existing) {
       return res.status(400).json({ message: "User already exists" });
     }
-
-
     const intern = await User.create({
       name,
       email,
@@ -766,8 +760,11 @@ export const createIntern = async (req, res) => {
       company: req.user.company,
       isActive: true
     })
-
-    await sendEmail(
+    res.status(201).json({
+      success: true,
+      message: "Intern created and email sent"
+    })
+    sendEmail(
       email,
       "Intern Account Created",
       `
@@ -778,11 +775,6 @@ export const createIntern = async (req, res) => {
         <p>Please change your password after login.</p>
       `
     )
-
-    res.status(201).json({
-      success: true,
-      message: "Intern created and email sent"
-    })
   } catch (error) {
     console.log(error)
     res.status(500).json({

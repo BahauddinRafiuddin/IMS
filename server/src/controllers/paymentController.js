@@ -1,4 +1,6 @@
+import CompanyWallet from "../models/CompanyWallet.js";
 import Enrollment from "../models/Enrollment.js";
+import Payment from "../models/Payment.js";
 import razorpay from "../utils/razorpay.js";
 import crypto from 'crypto'
 
@@ -63,19 +65,70 @@ export const verifyPayment = async (req, res) => {
 
     // ✅ Signature verified → update enrollment
     const enrollment = await Enrollment.findById(enrollmentId)
+      .populate({
+        path: "program",
+        populate: { path: "company" }
+      })
 
     if (!enrollment) {
       return res.status(404).json({ message: "Enrollment not found" })
     }
+    if (enrollment.paymentStatus === "paid") {
+      return res.status(400).json({ message: "Already paid" })
+    }
 
+    const program = enrollment.program
+    const company = program.company
+    const amount = program.price
+
+    // ✅ Commission Calculation
+    const commissionPercent = company.commissionPercentage
+
+    const superAdminCommission =
+      (amount * commissionPercent) / 100
+
+    const companyEarning =
+      amount - superAdminCommission
+
+    // ✅ Create Payment Record
+    const payment = await Payment.create({
+      intern: enrollment.intern,
+      company: company._id,
+      program: program._id,
+      enrollment: enrollment._id,
+      totalAmount: amount,
+      superAdminCommission,
+      companyEarning,
+      paymentStatus: "success",
+      transactionId: razorpay_payment_id,
+      paymentMethod: "razorpay"
+    })
+
+    // ✅ Update Enrollment
     enrollment.paymentStatus = "paid"
-    enrollment.paymentId = razorpay_payment_id
-    
+    enrollment.payment = payment._id
     await enrollment.save()
+
+    // ✅ Update Company Wallet
+    let wallet = await CompanyWallet.findOne({ company: company._id })
+
+    if (!wallet) {
+      wallet = await CompanyWallet.create({
+        company: company._id,
+        totalEarning: 0,
+        totalWithdrawn: 0,
+        availableBalance: 0
+      })
+    }
+
+    wallet.totalEarning += companyEarning
+    wallet.availableBalance += companyEarning
+
+    await wallet.save()
 
     res.status(200).json({
       success: true,
-      message: "Payment verified successfully"
+      message: "Payment verified and revenue distributed successfully"
     })
 
   } catch (error) {

@@ -20,3 +20,18 @@ export const getSuperAdminDashboard = async () => {
   const res = await api.get("/superadmin/dashboard");
   return res.data;
 }
+
+export const getCompanyFinanceOverview = async () => {
+  const res = await api.get('/superadmin/finance-data')
+  return res.data;
+}
+
+export const getCompanyRevenueDetails = async (companyId) => {
+  const res = await api.get(`/superadmin/company-finance/${companyId}`);
+  return res.data;
+};
+
+export const getPlatformFinanceStats =async () => {
+  const res=await api.get('/superadmin/platform-finance')
+  return res.data
+}

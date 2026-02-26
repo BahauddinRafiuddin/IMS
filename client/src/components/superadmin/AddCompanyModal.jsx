@@ -11,9 +11,10 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
     email: "",
     phone: "",
     address: "",
-    adminName: "",
+    commissionPercentage: 20,
     adminEmail: "",
-    adminPassword: ""
+    adminName: "",
+    adminPassword: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -24,8 +25,14 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
   const phoneRegex = /^[0-9]{10}$/;
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" });
+    const { name, value } = e.target;
+
+    setForm({
+      ...form,
+      [name]: name === "commissionPercentage" ? Number(value) : value,
+    });
+
+    setErrors({ ...errors, [name]: "" });
   };
 
   const validate = () => {
@@ -43,6 +50,14 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
       newErrors.phone = "Phone number must be exactly 10 digits";
     }
 
+    if (
+      form.commissionPercentage === "" ||
+      form.commissionPercentage < 0 ||
+      form.commissionPercentage > 100
+    ) {
+      newErrors.commissionPercentage = "Commission must be between 0 and 100";
+    }
+
     if (!form.adminName.trim()) {
       newErrors.adminName = "Admin name is required";
     }
@@ -52,8 +67,7 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
     }
 
     if (!form.adminPassword || form.adminPassword.length < 8) {
-      newErrors.adminPassword =
-        "Password must be at least 8 characters long";
+      newErrors.adminPassword = "Password must be at least 8 characters long";
     }
 
     setErrors(newErrors);
@@ -81,7 +95,6 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl relative p-6 md:p-8">
-
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-red-500 transition cursor-pointer"
@@ -94,7 +107,6 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-
           {/* COMPANY DETAILS */}
           <div>
             <h3 className="text-lg font-semibold mb-3 text-indigo-600">
@@ -102,7 +114,6 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
               <div>
                 <label className="text-sm font-medium">Company Name *</label>
                 <input
@@ -112,9 +123,7 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
                   className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
                 {errors.name && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.name}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                 )}
               </div>
 
@@ -128,9 +137,7 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
                   className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.email}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
                 )}
               </div>
 
@@ -144,9 +151,7 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
                   className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
                 {errors.phone && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.phone}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                 )}
               </div>
 
@@ -159,7 +164,34 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
                   className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
-
+              <div>
+                <label className="text-sm font-medium">
+                  Commission Percentage (%) *
+                </label>
+                <div className="relative">
+                  <input
+                    name="commissionPercentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={form.commissionPercentage}
+                    onChange={handleChange}
+                    className="w-full mt-1 px-3 py-2 pr-8 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                  <span className="absolute right-3 top-3 text-gray-500">
+                    %
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Super Admin will keep this percentage from each paid
+                  enrollment.
+                </p>
+                {errors.commissionPercentage && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.commissionPercentage}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -170,7 +202,6 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
               <div>
                 <label className="text-sm font-medium">Admin Name *</label>
                 <input
@@ -203,13 +234,12 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-sm font-medium">
-                  Admin Password *
-                </label>
+                <label className="text-sm font-medium">Admin Password *</label>
                 <input
                   name="adminPassword"
                   type="password"
                   minLength={8}
+                  maxLength={8}
                   value={form.adminPassword}
                   onChange={handleChange}
                   className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -220,7 +250,6 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
                   </p>
                 )}
               </div>
-
             </div>
           </div>
 
@@ -232,7 +261,6 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
               {loading ? "Creating Company..." : "Create Company"}
             </button>
           </div>
-
         </form>
       </div>
     </div>

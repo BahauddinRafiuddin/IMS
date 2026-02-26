@@ -6,7 +6,7 @@ import { sendEmail } from "../utils/sendEmail.js"
 //   try {
 //     const { name, email, phone, address, adminName, adminEmail, adminPassword } = req.body;
 
-    
+
 //     // Check if company already exists
 //     const existingCompany = await Company.findOne({ name });
 //     if (existingCompany) {
@@ -55,6 +55,7 @@ export const createCompany = async (req, res) => {
       email,
       phone,
       address,
+      commissionPercentage,
       adminName,
       adminEmail,
       adminPassword
@@ -91,7 +92,8 @@ export const createCompany = async (req, res) => {
       name,
       email,
       phone,
-      address
+      address,
+      commissionPercentage
     });
 
     // Create Admin
@@ -104,21 +106,7 @@ export const createCompany = async (req, res) => {
       isActive: true
     });
 
-    // 📧 Send Email with Credentials
-    await sendEmail(
-      adminEmail,
-      "Your IMS Admin Account Created",
-      `
-        <h2>Welcome to IMS Platform</h2>
-        <p>Your admin account has been created successfully.</p>
-        <p><strong>Company:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${adminEmail}</p>
-        <p><strong>Password:</strong> ${adminPassword}</p>
-        <p>Please login and change your password immediately.</p>
-      `
-    );
-
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: "Company and Admin created successfully",
       company: {
@@ -132,6 +120,19 @@ export const createCompany = async (req, res) => {
         email: admin.email
       }
     });
+    // 📧 Send Email with Credentials
+    sendEmail(
+      adminEmail,
+      "Your IMS Admin Account Created",
+      `
+        <h2>Welcome to IMS Platform</h2>
+        <p>Your admin account has been created successfully.</p>
+        <p><strong>Company:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${adminEmail}</p>
+        <p><strong>Password:</strong> ${adminPassword}</p>
+        <p>Please login and change your password immediately.</p>
+      `
+    );
 
   } catch (error) {
     console.error(error);
@@ -167,7 +168,13 @@ export const toggleCompanyStatus = async (req, res) => {
     company.isActive = !company.isActive
     await company.save()
 
-    res.json({ success: true, message: "Company status updated", company })
+    const status = company.isActive ? "active" : "inactive";
+
+    res.json({
+      success: true,
+      message: `Company status updated to ${status}`,
+      company
+    });
   } catch (error) {
     res.status(500).json({ message: error.message })
   }

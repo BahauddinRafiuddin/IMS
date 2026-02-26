@@ -30,15 +30,17 @@ const enrollmentSchema = new mongoose.Schema({
     default: "not_required"
   },
 
-  paymentId: String,
-
+  payment: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Payment"
+  },
   enrolledAt: {
     type: Date,
     default: Date.now
   },
 
   completedAt: Date
-  
+
 
 }, { timestamps: true });
 

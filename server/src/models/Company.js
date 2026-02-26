@@ -12,6 +12,13 @@ const companySchema = new mongoose.Schema({
   },
   phone: String,
   address: String,
+  commissionPercentage: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100,
+    default: 20
+  },
   isActive: {
     type: Boolean,
     default: true

@@ -36,7 +36,7 @@ const Interns = () => {
       setAllInterns(internRes.interns);
       setInterns(internRes.interns);
     } catch (err) {
-      toastError(err.response?.data?.message);
+      console.log(err.response?.data?.message);
     } finally {
       setLoading(false);
     }
