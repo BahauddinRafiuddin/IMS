@@ -14,10 +14,13 @@ export const getMyProgram = async (req, res) => {
       path: "mentor",
       select: "name email"
     })
+    const validEnrollments = enrollement.filter(
+      (e) => e.program !== null
+    );
 
     res.status(200).json({
       success: true,
-      enrollement
+      enrollement: validEnrollments
     })
   } catch (error) {
     console.log(error)
@@ -111,7 +114,7 @@ export const getMyTask = async (req, res) => {
     // 🔐 find programs where intern is enrolled
     const enrollments = await Enrollment.find({
       intern: internId,
-      status: { $in: ["approved", "in_progress"] }
+      status: { $in: ["approved", "in_progress","completed"] }
     }).select("program");
 
     const programIds = enrollments.map(e => e.program);

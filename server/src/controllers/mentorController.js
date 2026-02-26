@@ -432,7 +432,6 @@ export const getMentorPrograms = async (req, res) => {
       company: req.user.company
     })
 
-
     if (!programs.length) {
       return res.status(404).json({ success: false, message: "No Programs Found" })
     }
@@ -442,7 +441,7 @@ export const getMentorPrograms = async (req, res) => {
         const enrollments = await Enrollment.find({
           program: program._id,
           mentor: mentorId,
-          status: "in_progress"
+          // status: "in_progress"
         }).populate("intern", "name email");
 
         return {

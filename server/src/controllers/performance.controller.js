@@ -2,6 +2,7 @@ import { isValidObjectId } from "mongoose"
 import Task from "../models/Task.js"
 import InternshipProgram from "../models/InternshipProgram.js"
 import { calculateInternPerformanceService } from "../services/performance.service.js"
+import Enrollment from "../models/Enrollment.js";
 
 export const calculateInternPerformance = async (req, res) => {
   try {
@@ -31,11 +32,12 @@ export const calculateInternPerformance = async (req, res) => {
       });
     }
 
-    const enrolled = program.interns.some(
-      id => id.intern.toString() === internId
-    );
+    const enrollment = await Enrollment.findOne({
+      intern: internId,
+      program: programId
+    });
 
-    if (!enrolled) {
+    if (!enrollment) {
       return res.status(403).json({
         success: false,
         message: "Intern not enrolled in this program"

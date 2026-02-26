@@ -11,24 +11,26 @@ import internRouter from './routes/internRoutes.js'
 import paymentRouter from './routes/paymentRoutes.js'
 import mentorRouter from './routes/mentorRoutes.js'
 import superAdminRouter from './routes/superAdminRoutes.js'
+import userRouter from './routes/userRoutes.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/superadmin',superAdminRouter)
-app.use('/api/companies',companyRouter)
-app.use('/api/programs',programRouter)
-app.use('/api/enrollments',enrollmentRouter)
-app.use('/api/intern',internRouter)
-app.use('/api/mentor',mentorRouter)
-app.use('/api/admin',adminRouter)
-app.use('/api/payment',paymentRouter)
+app.use('/api/user', userRouter)
+app.use('/api/superadmin', superAdminRouter)
+app.use('/api/companies', companyRouter)
+app.use('/api/programs', programRouter)
+app.use('/api/enrollments', enrollmentRouter)
+app.use('/api/intern', internRouter)
+app.use('/api/mentor', mentorRouter)
+app.use('/api/admin', adminRouter)
+app.use('/api/payment', paymentRouter)
 
 
-app.use('/api/auth',authRouter)
-app.use('/api/performance',performanceRouter)
-app.use('/api/certificate',certificateRouter)
+app.use('/api/auth', authRouter)
+app.use('/api/performance', performanceRouter)
+app.use('/api/certificate', certificateRouter)
 
 export default app;

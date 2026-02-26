@@ -32,6 +32,7 @@ export const createTask = async (data) => {
 
 export const getInternPerformance = async () => {
   const res = await api.get('/mentor/intern-performance')
+  // console.log("Performance API response:", res);
   return res.data
 }
 

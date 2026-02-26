@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
 import {
   checkCertificateEligibility,
@@ -21,10 +22,12 @@ const Certificate = () => {
     const loadEligibility = async () => {
       try {
         const programRes = await getMyProgram();
-        const id = programRes.program[0]._id;
+        // console.log("res",programRes)
+        const id = programRes.enrollement[0].program._id;
         setProgramId(id);
 
         const res = await checkCertificateEligibility(id);
+        // console.log("eligible",res)
         setEligible(res.eligible);
         setDetails(res);
       } catch (err) {
@@ -142,7 +145,7 @@ const Certificate = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-blue-700">
           <b>Eligibility Rules:</b>
           <ul className="list-disc ml-6 mt-2 space-y-1">
-            <li>Program must be completed</li>
+            <li>Internship must be completed by your mentor</li>
             <li>At least one task submitted</li>
             <li>Completion ≥ 45%</li>
             <li>Grade must not be Fail</li>

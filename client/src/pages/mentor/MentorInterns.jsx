@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { getMentorInterns } from "../../api/mentor.api";
-import {
-  Users,
-  Mail,
-  Calendar,
-  BookOpen
-} from "lucide-react";
+import { Users, Mail, Calendar, BookOpen } from "lucide-react";
 
 const MentorInterns = () => {
   const [loading, setLoading] = useState(true);
@@ -15,7 +10,9 @@ const MentorInterns = () => {
     const fetchMentorInterns = async () => {
       try {
         const res = await getMentorInterns();
-        setEnrollments(res.interns || res || []);
+        const interns = res.interns || [];
+        const validInterns = interns.filter((e) => e.program !== null);
+        setEnrollments(validInterns || res || []);
       } catch (error) {
         console.error(error);
       } finally {
@@ -28,9 +25,7 @@ const MentorInterns = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-20 text-gray-500">
-        Loading interns...
-      </div>
+      <div className="text-center py-20 text-gray-500">Loading interns...</div>
     );
   }
 
@@ -48,26 +43,22 @@ const MentorInterns = () => {
 
   return (
     <div className="space-y-10">
-
       {/* PAGE HEADER */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">
-          My Interns
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-800">My Interns</h1>
         <p className="text-gray-500 mt-1">
           Interns enrolled under your programs
         </p>
       </div>
 
       {/* ENROLLMENT CARDS */}
-      {enrollments.map(item => (
+      {enrollments.map((item) => (
         <div
           key={item._id}
           className="bg-white rounded-2xl shadow p-6 space-y-6"
         >
           {/* PROGRAM INFO */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-
             <div>
               <h2 className="text-xl font-bold text-gray-800">
                 {item.program.title}
@@ -79,9 +70,7 @@ const MentorInterns = () => {
                   {item.program.domain}
                 </span>
 
-                <span>
-                  Duration: {item.program.durationInWeeks} weeks
-                </span>
+                <span>Duration: {item.program.durationInWeeks} weeks</span>
 
                 <span>
                   {new Date(item.program.startDate).toDateString()} —{" "}
@@ -96,8 +85,8 @@ const MentorInterns = () => {
                 item.program.status === "active"
                   ? "bg-green-100 text-green-700"
                   : item.program.status === "completed"
-                  ? "bg-gray-200 text-gray-700"
-                  : "bg-yellow-100 text-yellow-700"
+                    ? "bg-gray-200 text-gray-700"
+                    : "bg-yellow-100 text-yellow-700"
               }`}
             >
               {item.program.status.toUpperCase()}
@@ -123,9 +112,7 @@ const MentorInterns = () => {
 
               <tbody>
                 <tr className="border-t hover:bg-gray-50">
-                  <td className="px-5 py-4 font-medium">
-                    {item.intern.name}
-                  </td>
+                  <td className="px-5 py-4 font-medium">{item.intern.name}</td>
 
                   <td className="px-5 py-4 text-gray-600">
                     {item.intern.email}
@@ -141,9 +128,7 @@ const MentorInterns = () => {
 
           {/* MOBILE CARD */}
           <div className="md:hidden border rounded-xl p-4 space-y-2">
-            <h3 className="font-semibold text-lg">
-              {item.intern.name}
-            </h3>
+            <h3 className="font-semibold text-lg">{item.intern.name}</h3>
 
             <p className="text-sm flex items-center gap-2 text-gray-600">
               <Mail size={16} />
@@ -152,11 +137,9 @@ const MentorInterns = () => {
 
             <p className="text-sm flex items-center gap-2 text-gray-500">
               <Calendar size={16} />
-              Enrolled:{" "}
-              {new Date(item.enrolledAt).toDateString()}
+              Enrolled: {new Date(item.enrolledAt).toDateString()}
             </p>
           </div>
-
         </div>
       ))}
     </div>

@@ -10,6 +10,7 @@ export const createProgram = async (req, res) => {
       type,
       price,
       startDate,
+      minimumTasksRequired,
       endDate,
       durationInWeeks,
       rules
@@ -24,6 +25,7 @@ export const createProgram = async (req, res) => {
       price,
       startDate,
       endDate,
+      minimumTasksRequired,
       durationInWeeks,
       rules,
       company: req.user.company

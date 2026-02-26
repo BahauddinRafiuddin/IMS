@@ -5,7 +5,8 @@ import {
   GraduationCap,
   BookOpen,
   LogOut,
-  NotebookPen 
+  NotebookPen,
+  UserRoundPen ,
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
@@ -13,12 +14,13 @@ const Sidebar = ({ onClose }) => {
   const { user, logout } = useAuth();
 
   const menus = {
-    super_admin:[
-      {name:'Dashboard',path:"/superadmin",icon:LayoutDashboard},
-      {name:'Companies',path:'/superadmin/companies',icon:Users}
+    super_admin: [
+      { name: "Dashboard", path: "/superadmin", icon: LayoutDashboard },
+      { name: "Companies", path: "/superadmin/companies", icon: Users },
     ],
     admin: [
       { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
+      { name: "My Profile", path: "/admin/profile", icon: UserRoundPen  },
       { name: "Interns", path: "/admin/interns", icon: Users },
       { name: "Mentors", path: "/admin/mentors", icon: GraduationCap },
       { name: "Programs", path: "/admin/programs", icon: BookOpen },
@@ -26,6 +28,7 @@ const Sidebar = ({ onClose }) => {
 
     intern: [
       { name: "Dashboard", path: "/intern", icon: LayoutDashboard },
+      { name: "My Profile", path: "/intern/profile", icon: UserRoundPen  },
       { name: "My Programs", path: "/intern/myProgram", icon: BookOpen },
       { name: "My Tasks", path: "/intern/tasks", icon: Users },
       { name: "Performance", path: "/intern/performance", icon: GraduationCap },
@@ -34,9 +37,10 @@ const Sidebar = ({ onClose }) => {
 
     mentor: [
       { name: "Dashboard", path: "/mentor", icon: LayoutDashboard },
+      { name: "My Profile", path: "/mentor/profile", icon: UserRoundPen  },
       { name: "Programs", path: "/mentor/programs", icon: BookOpen },
       { name: "Interns", path: "/mentor/interns", icon: Users },
-      { name: "Task", path: "/mentor/tasks", icon: NotebookPen  },
+      { name: "Task", path: "/mentor/tasks", icon: NotebookPen },
       {
         name: "Track Performance",
         path: "/mentor/performance",

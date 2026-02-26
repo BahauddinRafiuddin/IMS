@@ -19,7 +19,7 @@ const InternPerformance = () => {
         const res = await getInternPerformance();
         setInterns(res.interns || []);
       } catch (error) {
-        console.error(error);
+        console.log(error);
       } finally {
         setLoading(false);
       }

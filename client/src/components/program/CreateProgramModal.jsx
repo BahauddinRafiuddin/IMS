@@ -23,6 +23,7 @@ const CreateProgram = ({ onClose, refresh }) => {
     description: "",
     mentor: "",
     durationInWeeks: "",
+    minimumTasksRequired:"",
     startDate: "",
     endDate: "",
     type: "free",
@@ -74,6 +75,8 @@ const CreateProgram = ({ onClose, refresh }) => {
     if (!form.title.trim()) err.title = "Program title is required";
     if (!form.domain) err.domain = "Domain is required";
     if (!form.mentor) err.mentor = "Mentor selection is required";
+    if (!form.minimumTasksRequired) err.minimumTasksRequired = "Specify MinimumTasks it is required";
+    if(form.minimumTasksRequired>30) err.minimumTasksRequired="Not More Than 30"
     if (!form.startDate) err.startDate = "Start date is required";
     if (!form.endDate) err.endDate = "End date is required";
     if (!form.description.trim()) err.description = "Description is required";
@@ -240,6 +243,22 @@ const CreateProgram = ({ onClose, refresh }) => {
               </div>
             )}
 
+            {/* Minimum Task */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Minimum Task
+              </label>
+              <input
+                type="number"
+                name="minimumTasksRequired"
+                value={form.minimumTasksRequired}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2"
+              />
+              {errors.minimumTasksRequired && (
+                <p className="text-red-500 text-xs mt-1">{errors.minimumTasksRequired}</p>
+              )}
+            </div>
             {/* START DATE */}
             <div>
               <label className="block text-sm font-medium mb-1">

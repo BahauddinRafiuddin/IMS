@@ -35,9 +35,9 @@ const Performance = () => {
     const load = async () => {
       try {
         const programRes = await getMyProgram();
-        // console.log(programRes);
-        const programId = programRes.program[0]._id;
-        setPStatus(programRes.program[0].status);
+        const programId = programRes.enrollement[0].program._id;
+        console.log(programRes)
+        setPStatus(programRes.enrollement[0].status);
         const perfRes = await getMyPerformance(programId);
         setPerformance(perfRes.performance);
       } catch (err) {
@@ -63,7 +63,6 @@ const Performance = () => {
         Performance not available
       </div>
     );
-
   const completion = Number(performance.completionPercentage);
   const data = [
     {

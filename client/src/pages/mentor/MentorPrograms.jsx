@@ -7,7 +7,7 @@ import {
   Clock,
   Briefcase,
   CheckCircle,
-  IndianRupee
+  IndianRupee,
 } from "lucide-react";
 
 const MentorPrograms = () => {
@@ -28,22 +28,22 @@ const MentorPrograms = () => {
 
     fetchMentorPrograms();
   }, []);
-// console.log(programs)
+  // console.log(programs)
   // 🔥 Complete Internship Handler
   const handleComplete = async (enrollmentId) => {
     try {
       await completeInternship(enrollmentId);
 
       // Update UI instantly
-      setPrograms(prev =>
-        prev.map(program => ({
+      setPrograms((prev) =>
+        prev.map((program) => ({
           ...program,
-          interns: program.interns.map(enrollment =>
+          interns: program.interns.map((enrollment) =>
             enrollment._id === enrollmentId
               ? { ...enrollment, status: "completed" }
-              : enrollment
-          )
-        }))
+              : enrollment,
+          ),
+        })),
       );
 
       alert("Internship marked as completed ✅");
@@ -54,9 +54,7 @@ const MentorPrograms = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-20 text-gray-500">
-        Loading programs...
-      </div>
+      <div className="text-center py-20 text-gray-500">Loading programs...</div>
     );
   }
 
@@ -74,12 +72,9 @@ const MentorPrograms = () => {
 
   return (
     <div className="space-y-8">
-      
       {/* HEADER */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">
-          My Programs
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-800">My Programs</h1>
         <p className="text-gray-500 mt-1">
           Internship programs assigned to you
         </p>
@@ -87,7 +82,7 @@ const MentorPrograms = () => {
 
       {/* PROGRAM CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {programs.map(program => (
+        {programs.map((program) => (
           <div
             key={program._id}
             className="bg-white rounded-2xl shadow p-6 space-y-4 hover:shadow-lg transition"
@@ -104,10 +99,10 @@ const MentorPrograms = () => {
                   program.status === "active"
                     ? "bg-green-100 text-green-700"
                     : program.status === "completed"
-                    ? "bg-gray-200 text-gray-700"
-                    : program.status === "upcoming"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-red-100 text-red-700"
+                      ? "bg-gray-200 text-gray-700"
+                      : program.status === "upcoming"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
                 }`}
               >
                 {program.status.toUpperCase()}
@@ -115,13 +110,10 @@ const MentorPrograms = () => {
             </div>
 
             {/* DESCRIPTION */}
-            <p className="text-sm text-gray-600">
-              {program.description}
-            </p>
+            <p className="text-sm text-gray-600">{program.description}</p>
 
             {/* PROGRAM INFO */}
             <div className="space-y-2 text-sm text-gray-700">
-
               <div className="flex items-center gap-2">
                 <BookOpen size={16} />
                 Domain: <b>{program.domain}</b>
@@ -140,8 +132,7 @@ const MentorPrograms = () => {
 
               <div className="flex items-center gap-2">
                 <CheckCircle size={16} />
-                Minimum Tasks Required:{" "}
-                <b>{program.minimumTasksRequired}</b>
+                Minimum Tasks Required: <b>{program.minimumTasksRequired}</b>
               </div>
 
               <div className="flex items-center gap-2">
@@ -152,11 +143,7 @@ const MentorPrograms = () => {
               <div className="flex items-center gap-2">
                 <IndianRupee size={16} />
                 Price:{" "}
-                <b>
-                  {program.type === "free"
-                    ? "Free"
-                    : `₹${program.price}`}
-                </b>
+                <b>{program.type === "free" ? "Free" : `₹${program.price}`}</b>
               </div>
 
               <div className="flex items-center gap-2">
@@ -172,52 +159,70 @@ const MentorPrograms = () => {
               </h3>
 
               {program.interns.length === 0 ? (
-                <p className="text-xs text-gray-400">
-                  No interns assigned
-                </p>
+                <p className="text-xs text-gray-400">No interns assigned</p>
               ) : (
                 <div className="space-y-3">
-                  {program.interns.map(enrollment => (
+                  {program.interns.map((enrollment) => (
                     <div
                       key={enrollment._id}
-                      className="bg-gray-50 p-3 rounded-lg space-y-1"
+                      className="bg-white border border-gray-100 hover:border-indigo-200 transition-all rounded-xl p-4 shadow-sm hover:shadow-md"
                     >
-                      <div className="font-medium">
-                        {enrollment.intern.name}
-                      </div>
+                      {/* Intern Header */}
+                      <div className="flex items-center justify-between">
+                        {/* Avatar + Name */}
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
+                            {enrollment.intern.name.charAt(0).toUpperCase()}
+                          </div>
 
-                      <div className="text-xs text-gray-500">
-                        {enrollment.intern.email}
-                      </div>
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {enrollment.intern.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {enrollment.intern.email}
+                            </p>
+                          </div>
+                        </div>
 
-                      <div className="text-xs">
-                        Status:{" "}
-                        <span className="font-semibold capitalize">
-                          {enrollment.status}
+                        {/* Status Badge */}
+                        <span
+                          className={`px-3 py-1 text-xs font-semibold rounded-full capitalize
+          ${
+            enrollment.status === "completed"
+              ? "bg-green-100 text-green-700"
+              : enrollment.status === "in_progress"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-gray-100 text-gray-600"
+          }`}
+                        >
+                          {enrollment.status.replace("_", " ")}
                         </span>
                       </div>
 
-                      {/* COMPLETE BUTTON */}
-                      {enrollment.status === "in_progress" && (
-                        <button
-                          onClick={() => handleComplete(enrollment._id)}
-                          className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white text-xs py-1.5 rounded-lg transition"
-                        >
-                          Complete Internship
-                        </button>
-                      )}
+                      {/* Action Section */}
+                      <div className="mt-4">
+                        {enrollment.status === "in_progress" && (
+                          <button
+                            onClick={() => handleComplete(enrollment._id)}
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 rounded-lg transition font-medium cursor-pointer"
+                          >
+                            Mark as Completed
+                          </button>
+                        )}
 
-                      {enrollment.status === "completed" && (
-                        <div className="text-green-600 text-xs font-semibold mt-1">
-                          Internship Completed ✅
-                        </div>
-                      )}
+                        {enrollment.status === "completed" && (
+                          <div className="text-green-600 text-sm font-semibold flex items-center gap-1">
+                            <CheckCircle size={16} />
+                            Internship Completed
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
           </div>
         ))}
       </div>
