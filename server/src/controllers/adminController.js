@@ -5,6 +5,8 @@ import razorpay from "../utils/razorpay.js";
 import crypto from "crypto"
 import { sendEmail } from "../utils/sendEmail.js"
 import Enrollment from "../models/Enrollment.js";
+import Payment from "../models/Payment.js";
+import CompanyWallet from "../models/CompanyWallet.js";
 
 
 // Admin Auth Controllers
@@ -496,7 +498,6 @@ export const changeProgramStatus = async (req, res) => {
 }
 
 // Update Program
-// Update Program
 export const updateProgram = async (req, res) => {
   try {
     const { progId } = req.params;
@@ -587,69 +588,6 @@ export const updateProgram = async (req, res) => {
     });
   }
 }
-
-
-// export const enrollIntern = async (req, res) => {
-//   try {
-//     const { progId } = req.params
-//     const { internId } = req.body
-
-//     if (!isValidObjectId(progId) || !isValidObjectId(internId)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid program or intern id"
-//       });
-//     }
-
-//     // Program Must be Exist
-//     const program = await InternshipProgram.findById(progId)
-//     if (!program) {
-//       return res.status(404).json({ success: false, message: "Program Not Found" })
-//     }
-
-//     // Program Must be Upcomming
-//     if (program.status != "upcoming") {
-//       return res.status(403).json({ success: false, message: "Program is Already Active Or Completed" })
-//     }
-
-//     // Intern Must Exist
-//     const intern = await User.findById(internId)
-//     if (!intern || intern.role != "intern") {
-//       return res.status(404).json({ success: false, message: "Intern Not Found" })
-//     }
-
-//     // Intern Must be Active
-//     if (!intern.isActive) {
-//       return res.status(403).json({ success: false, message: "Intern Is Not Active" })
-//     }
-
-//     // Check If Intern Alredy Enrolled in program
-//     const alreadyEnrolled = program.interns.some(
-//       i => i.intern.toString() === internId
-//     );
-
-//     if (alreadyEnrolled) {
-//       return res.status(409).json({
-//         success: false,
-//         message: `${intern.name} already enrolled in this program`
-//       });
-//     }
-
-//     program.interns.push({
-//       intern: internId,
-//       mentor: program.mentor
-//     });
-//     await program.save()
-//     return res.status(200).json({ success: true, message: `${intern.name} Is Successfully Enrolled In This Program` })
-
-//   } catch (error) {
-//     console.log(error)
-//     res.status(500).json({
-//       success: false,
-//       message: 'Server Error While Enrolling Intern Into Program'
-//     })
-//   }
-// }
 
 export const getAvailableInterns = async (req, res) => {
   try {
@@ -788,48 +726,111 @@ export const refundPayment = async (req, res) => {
   try {
     const { enrollmentId } = req.body;
 
+    // 1️⃣ Find enrollment with program & payment
     const enrollment = await Enrollment.findById(enrollmentId)
-      .populate("program");
+      .populate("program")
+      .populate("payment");
 
     if (!enrollment) {
-      return res.status(404).json({ message: "Enrollment not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Enrollment not found"
+      });
     }
 
-    if (enrollment.program.company.toString() !== req.user.company.toString()) {
+    const payment = enrollment.payment;
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found"
+      });
+    }
+
+    // 2️⃣ Ownership check
+    if (
+      enrollment.program.company.toString() !==
+      req.user.company.toString()
+    ) {
       return res.status(403).json({
         success: false,
-        message: "Not Your Company program"
-      })
+        message: "Not your company program"
+      });
     }
-    // 🔐 Only paid programs
+
+    // 3️⃣ Validate program type
     if (enrollment.program.type !== "paid") {
       return res.status(400).json({
+        success: false,
         message: "Refund applicable only for paid programs"
       });
     }
 
+    // 4️⃣ Internship must be completed
     if (enrollment.status !== "completed") {
       return res.status(400).json({
+        success: false,
         message: "Internship must be completed before refund"
       });
     }
 
+    // 5️⃣ Payment eligibility checks
     if (enrollment.paymentStatus !== "paid") {
       return res.status(400).json({
+        success: false,
         message: "Payment not eligible for refund"
       });
     }
 
-    // 🔥 Call Razorpay refund API
+    if (payment.paymentStatus !== "success") {
+      return res.status(400).json({
+        success: false,
+        message: "Payment not eligible for refund"
+      });
+    }
+
+    // 6️⃣ Find company wallet properly
+    const wallet = await CompanyWallet.findOne({
+      company: enrollment.program.company
+    });
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: "Company wallet not found"
+      });
+    }
+
+    // 🔒 Safety check: ensure funds available
+    if (wallet.availableBalance < payment.companyEarning) {
+      return res.status(400).json({
+        success: false,
+        message: "Refund not possible. Funds already withdrawn."
+      });
+    }
+
+    // 7️⃣ Call Razorpay refund
     const refund = await razorpay.payments.refund(
-      enrollment.paymentId,
+      payment.transactionId,
       {
-        amount: enrollment.program.price * 100
+        amount: payment.totalAmount * 100 // safest way
       }
     );
 
+    // 8️⃣ Reverse financial impact
+
+    // Update enrollment
     enrollment.paymentStatus = "refunded";
     await enrollment.save();
+
+    // Update payment
+    payment.paymentStatus = "refunded";
+    await payment.save();
+
+    // Reverse wallet earnings
+    wallet.availableBalance -= payment.companyEarning;
+    wallet.totalEarning -= payment.companyEarning;
+    await wallet.save();
 
     res.status(200).json({
       success: true,
@@ -837,6 +838,56 @@ export const refundPayment = async (req, res) => {
       refund
     });
 
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const getAdminFinanceOverview = async (req, res) => {
+  try {
+    const payments = await Payment.find({
+      company: req.user.company,
+      paymentStatus: "success"
+    }).populate("intern")
+      .populate("program")
+      .sort({ createdAt: -1 })
+      .limit(5)
+
+    var transactions = []
+    transactions = payments.map(payment => ({
+      paymentId: payment._id,
+      internName: payment.intern.name,
+      programTitle: payment.program.name,
+      totalAmount: payment.totalAmount,
+      superAdminCommission: payment.superAdminCommission,
+      companyEarning: payment.companyEarning,
+      paymentMethod: payment.paymentMethod,
+      createdAt: payment.createdAt
+    }))
+    const totalRevenue = payments.reduce((sum, p) => sum + p.totalAmount, 0);
+    const totalCommission = payments.reduce((sum, p) => sum + p.superAdminCommission, 0);
+    const totalCompanyEarning = payments.reduce((sum, p) => sum + p.companyEarning, 0);
+    const totalTransactions = payments.length
+
+    const wallet = await CompanyWallet.findOne({ company: req.user.company });
+    const availableBalance = wallet.availableBalance || 0
+    const totalWithdrawn = wallet.totalWithdrawn
+
+    res.status(200).json({
+      success: true,
+      summary: {
+        totalRevenue,
+        totalCommission,
+        totalCompanyEarning,
+        totalTransactions,
+        availableBalance,
+        totalWithdrawn
+      },
+      transactions
+    })
   } catch (error) {
     res.status(500).json({
       success: false,

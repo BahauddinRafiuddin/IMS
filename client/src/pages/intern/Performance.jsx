@@ -36,7 +36,7 @@ const Performance = () => {
       try {
         const programRes = await getMyProgram();
         const programId = programRes.enrollement[0].program._id;
-        console.log(programRes)
+        // console.log(programRes)
         setPStatus(programRes.enrollement[0].status);
         const perfRes = await getMyPerformance(programId);
         setPerformance(perfRes.performance);

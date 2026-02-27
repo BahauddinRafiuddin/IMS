@@ -45,3 +45,7 @@ export const deleteMentorById = async (mentorId) => {
   const res = await api.delete(`/admin/mentor/${mentorId}/delete`)
   return res.data
 }
+export const getAdminFinanceOverview = async () => {
+  const res = await api.get("/admin/finance-overview");
+  return res.data;
+};

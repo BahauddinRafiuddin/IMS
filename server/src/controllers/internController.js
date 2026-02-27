@@ -2,6 +2,7 @@ import Enrollment from "../models/Enrollment.js"
 import Task from "../models/Task.js"
 import { isValidObjectId } from "mongoose";
 import User from "../models/User.js";
+import Payment from '../models/Payment.js'
 
 export const getMyProgram = async (req, res) => {
   try {
@@ -114,7 +115,7 @@ export const getMyTask = async (req, res) => {
     // 🔐 find programs where intern is enrolled
     const enrollments = await Enrollment.find({
       intern: internId,
-      status: { $in: ["approved", "in_progress","completed"] }
+      status: { $in: ["approved", "in_progress", "completed"] }
     }).select("program");
 
     const programIds = enrollments.map(e => e.program);
@@ -235,3 +236,62 @@ export const submitTask = async (req, res) => {
     });
   }
 }
+export const getInternPaymentHistory = async (req, res) => {
+  try {
+    const payments = await Payment.find({
+      intern: req.user._id,
+      paymentStatus: "success"
+    })
+      .populate("program", "title")
+      .populate("company", "name")
+      .sort({ createdAt: -1 });
+
+    if (!payments.length) {
+      return res.status(200).json({
+        success: true,
+        summary: {
+          totalPaid: 0,
+          totalProgramsPurchased: 0,
+          lastPaymentDate: null
+        },
+        payments: []
+      });
+    }
+
+    const transactions = payments.map(payment => ({
+      paymentId: payment._id,
+      programTitle: payment.program?.title || "N/A",
+      companyName: payment.company?.name || "N/A",
+      amount: payment.totalAmount,
+      paymentMethod: payment.paymentMethod,
+      status: payment.paymentStatus,
+      transactionId: payment.transactionId,
+      createdAt: payment.createdAt
+    }));
+
+    const totalPaid = payments.reduce(
+      (sum, p) => sum + p.totalAmount,
+      0
+    );
+
+    const totalProgramsPurchased = payments.length;
+
+    const lastPaymentDate = payments[0].createdAt;
+
+    res.status(200).json({
+      success: true,
+      summary: {
+        totalPaid,
+        totalProgramsPurchased,
+        lastPaymentDate
+      },
+      payments: transactions
+    });
+
+  } catch (error) {
+    res.status(500).json({  
+      success: false,
+      message: error.message
+    });
+  }
+};

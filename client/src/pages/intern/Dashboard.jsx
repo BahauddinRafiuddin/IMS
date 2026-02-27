@@ -150,26 +150,46 @@ const InternDashboard = () => {
       <div>
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <button
             onClick={() => navigate("/intern/tasks")}
             className="bg-white rounded-xl shadow p-6 text-left hover:shadow-lg transition cursor-pointer"
           >
-            📋 View My Tasks
+            <p className="text-lg font-semibold">📋 View My Tasks</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Check assigned and pending tasks
+            </p>
           </button>
 
           <button
             onClick={() => navigate("/intern/performance")}
             className="bg-white rounded-xl shadow p-6 text-left hover:shadow-lg transition cursor-pointer"
           >
-            📊 My Performance
+            <p className="text-lg font-semibold">📊 My Performance</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Track your internship progress
+            </p>
           </button>
 
           <button
             onClick={() => navigate("/intern/certificate")}
             className="bg-white rounded-xl shadow p-6 text-left hover:shadow-lg transition cursor-pointer"
           >
-            🎓 Certificate Status
+            <p className="text-lg font-semibold">🎓 Certificate Status</p>
+            <p className="text-sm text-gray-500 mt-1">
+              View eligibility and download certificate
+            </p>
+          </button>
+
+          {/* ✅ NEW PAYMENT BUTTON */}
+          <button
+            onClick={() => navigate("/intern/payments")}
+            className="bg-white rounded-xl shadow p-6 text-left hover:shadow-lg transition cursor-pointer"
+          >
+            <p className="text-lg font-semibold">💳 Payment History</p>
+            <p className="text-sm text-gray-500 mt-1">
+              View your payment records
+            </p>
           </button>
         </div>
       </div>

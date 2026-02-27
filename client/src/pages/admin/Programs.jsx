@@ -70,7 +70,7 @@ const Programs = () => {
     );
   }, [search, programs]);
 
-  console.log("programs", programs);
+  // console.log("programs", programs);
   return (
     <div className="space-y-8">
       {/* ================= MODALS ================= */}
