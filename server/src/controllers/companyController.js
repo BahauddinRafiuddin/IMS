@@ -1,6 +1,7 @@
 import User from '../models/User.js'
 import Company from '../models/Company.js'
 import { sendEmail } from "../utils/sendEmail.js"
+import { generateTempPassword } from '../utils/generatePassword.js';
 
 // export const createCompany = async (req, res) => {
 //   try {
@@ -57,17 +58,17 @@ export const createCompany = async (req, res) => {
       address,
       commissionPercentage,
       adminName,
-      adminEmail,
-      adminPassword
+      adminEmail
     } = req.body;
 
     // Validate required fields
-    if (!name || !adminName || !adminEmail || !adminPassword) {
+    if (!name || !adminName || !adminEmail) {
       return res.status(400).json({
         success: false,
         message: "All required fields must be provided"
       });
     }
+    const tempPassword = generateTempPassword()
 
     // Check existing company
     const existingCompany = await Company.findOne({ name });
@@ -100,7 +101,7 @@ export const createCompany = async (req, res) => {
     const admin = await User.create({
       name: adminName,
       email: adminEmail,
-      password: adminPassword,
+      password: tempPassword,
       role: "admin",
       company: company._id,
       isActive: true
@@ -129,7 +130,7 @@ export const createCompany = async (req, res) => {
         <p>Your admin account has been created successfully.</p>
         <p><strong>Company:</strong> ${name}</p>
         <p><strong>Email:</strong> ${adminEmail}</p>
-        <p><strong>Password:</strong> ${adminPassword}</p>
+        <p><strong>Password:</strong> ${tempPassword}</p>
         <p>Please login and change your password immediately.</p>
       `
     );

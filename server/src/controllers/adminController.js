@@ -7,6 +7,7 @@ import { sendEmail } from "../utils/sendEmail.js"
 import Enrollment from "../models/Enrollment.js";
 import Payment from "../models/Payment.js";
 import CompanyWallet from "../models/CompanyWallet.js";
+import { generateTempPassword } from "../utils/generatePassword.js";
 
 
 // Admin Auth Controllers
@@ -641,18 +642,18 @@ export const getAvailableInterns = async (req, res) => {
 
 export const createMentor = async (req, res) => {
   try {
-    const { name, email, password } = req.body
+    const { name, email } = req.body
 
     const existing = await User.findOne({ email })
     if (existing) {
       return res.status(400).json({ success: false, message: "User already exists" })
     }
 
-    // const tempPassword = crypto.randomBytes(4).toString("hex")
+    const tempPassword = generateTempPassword();
     const mentor = await User.create({
       name,
       email,
-      password: password,
+      password: tempPassword,
       role: "mentor",
       company: req.user.company,
       isActive: true
@@ -668,8 +669,8 @@ export const createMentor = async (req, res) => {
         <h2>Welcome to IMS</h2>
         <p>Your mentor account has been created.</p>
         <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Password:</strong> ${password}</p>
-        <p>Please change your password after login.</p>
+        <p><strong>Password:</strong> ${tempPassword}</p>
+        <p>Please change your password after first login.</p>
       `
     )
 
@@ -684,16 +685,18 @@ export const createMentor = async (req, res) => {
 
 export const createIntern = async (req, res) => {
   try {
-    const { name, email, password } = req.body
+    const { name, email } = req.body
 
     const existing = await User.findOne({ email })
     if (existing) {
       return res.status(400).json({ message: "User already exists" });
     }
+
+    const tempPassword = generateTempPassword()
     const intern = await User.create({
       name,
       email,
-      password: password,
+      password: tempPassword,
       role: "intern",
       company: req.user.company,
       isActive: true
@@ -709,8 +712,8 @@ export const createIntern = async (req, res) => {
         <h2>Welcome to IMS Internship Program</h2>
         <p>Your intern account has been created.</p>
         <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Password:</strong> ${password}</p>
-        <p>Please change your password after login.</p>
+        <p><strong>Password:</strong> ${tempPassword}</p>
+        <p>Please change your password after first login.</p>
       `
     )
   } catch (error) {

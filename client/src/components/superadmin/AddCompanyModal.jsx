@@ -13,9 +13,8 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
     address: "",
     commissionPercentage: 20,
     adminEmail: "",
-    adminName: "",
-    adminPassword: "",
-  });
+    adminName: ""
+  })
 
   const [errors, setErrors] = useState({});
 
@@ -52,8 +51,8 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
 
     if (
       form.commissionPercentage === "" ||
-      form.commissionPercentage < 0 ||
-      form.commissionPercentage > 100
+      form.commissionPercentage <=0 ||
+      form.commissionPercentage >100
     ) {
       newErrors.commissionPercentage = "Commission must be between 0 and 100";
     }
@@ -64,10 +63,6 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
 
     if (!emailRegex.test(form.adminEmail)) {
       newErrors.adminEmail = "Invalid admin email address";
-    }
-
-    if (!form.adminPassword || form.adminPassword.length < 8) {
-      newErrors.adminPassword = "Password must be at least 8 characters long";
     }
 
     setErrors(newErrors);
@@ -233,23 +228,7 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
                 )}
               </div>
 
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium">Admin Password *</label>
-                <input
-                  name="adminPassword"
-                  type="password"
-                  minLength={8}
-                  maxLength={8}
-                  value={form.adminPassword}
-                  onChange={handleChange}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-                {errors.adminPassword && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.adminPassword}
-                  </p>
-                )}
-              </div>
+             
             </div>
           </div>
 

@@ -4,19 +4,21 @@ import { lazy, Suspense } from "react";
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import RoleRoute from "../components/common/RoleRoute";
 
+const ForceChangePassword = lazy(
+  () => import("../pages/common/ForceChangePassword"),
+);
 const Landing = lazy(() => import("../pages/public/Landing"));
 
 const Interns = lazy(() => import("../pages/admin/Interns"));
 const Mentors = lazy(() => import("../pages/admin/Mentors"));
 const Programs = lazy(() => import("../pages/admin/Programs"));
-const AdminFinance=lazy(()=>import("../pages/admin/AdminFinance"))
-
+const AdminFinance = lazy(() => import("../pages/admin/AdminFinance"));
 
 const Certificate = lazy(() => import("../pages/intern/Certificate"));
 const InternPrograms = lazy(() => import("../pages/intern/InternProgram"));
 const InternTasks = lazy(() => import("../pages/intern/InternTasks"));
 const Performance = lazy(() => import("../pages/intern/Performance"));
-const InternPayments =lazy(()=> import('../pages/intern/InternPayments'))
+const InternPayments = lazy(() => import("../pages/intern/InternPayments"));
 
 const MentorPrograms = lazy(() => import("../pages/mentor/MentorPrograms"));
 const MentorTasks = lazy(() => import("../pages/mentor/MentorTasks"));
@@ -42,6 +44,7 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/change-password" element={<ForceChangePassword />} />
         <Route element={<ProtectedRoute />}>
           {/* Super Admin */}
           <Route element={<RoleRoute allowedRoles={["super_admin"]} />}>
@@ -85,7 +88,6 @@ const AppRoutes = () => {
               <Route path="performance" element={<Performance />} />
               <Route path="certificate" element={<Certificate />} />
               <Route path="payments" element={<InternPayments />} />
-
             </Route>
           </Route>
         </Route>

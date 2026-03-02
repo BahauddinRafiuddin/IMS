@@ -17,18 +17,15 @@ const Interns = () => {
   const [allInterns, setAllInterns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
-    password: "",
   });
 
   const emailRegex = /^[a-zA-Z][a-zA-Z0-9._%+-]{2,}@[a-z0-9.-]+\.[a-z]{2,}$/;
   const fullNameRegex = /^[A-Za-z ]{3,30}$/;
-  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
   const fetchData = async () => {
     try {
@@ -85,10 +82,6 @@ const Interns = () => {
       err.name = "Only alphabets allowed";
 
     if (!emailRegex.test(form.email)) err.email = "Invalid email address";
-
-    if (!passwordRegex.test(form.password))
-      err.password = "Min 8 chars, 1 capital, 1 number, 1 symbol";
-
     setErrors(err);
     return Object.keys(err).length === 0;
   };
@@ -157,7 +150,7 @@ const Interns = () => {
 
           <form
             onSubmit={handleSubmit}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
             {/* NAME */}
             <div>
@@ -196,36 +189,6 @@ const Interns = () => {
               </div>
               {errors.email && (
                 <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-              )}
-            </div>
-
-            {/* PASSWORD */}
-            <div>
-              <label className="text-sm font-medium">Password</label>
-              <div className="relative mt-1">
-                <Lock
-                  className="absolute left-3 top-3 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  minLength={8}
-                  maxLength={8}
-                  value={form.password}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-10 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-500 cursor-pointer"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
               )}
             </div>
 

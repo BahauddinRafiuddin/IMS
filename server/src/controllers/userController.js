@@ -145,6 +145,7 @@ export const changePassword = async (req, res) => {
     // const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     user.password = newPassword;
+    user.forcePasswordChange = false;
     await user.save();
 
     res.status(200).json({

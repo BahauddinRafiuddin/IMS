@@ -36,10 +36,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false // intern inactive until admin approves
   },
-  // mentor: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: "User"
-  // }
+  forcePasswordChange: {
+    type: Boolean,  
+    default: true
+  },
 
 }, { timestamps: true })
 

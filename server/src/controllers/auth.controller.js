@@ -57,17 +57,34 @@ export const login = async (req, res) => {
     }
 
     const token = jwt.sign({ id: exitsUser._id, role: exitsUser.role }, process.env.JWT_SECRET, { expiresIn: "1h" })
-    res.status(200).json({
-      success: true,
-      message: 'User logged In Successfully',
-      user: {
-        id: exitsUser._id,
-        name: exitsUser.name,
-        email: exitsUser.email,
-        role: exitsUser.role
-      },
-      token
-    })
+    if (exitsUser.forcePasswordChange) {
+      return res.status(200).json({
+        success: true,
+        message: 'User logged In Successfully',
+        user: {
+          id: exitsUser._id,
+          name: exitsUser.name,
+          email: exitsUser.email,
+          role: exitsUser.role,
+          forcePasswordChange: true
+        },
+        token
+      })
+    } else {
+      res.status(200).json({
+        success: true,
+        message: 'User logged In Successfully',
+        user: {
+          id: exitsUser._id,
+          name: exitsUser.name,
+          email: exitsUser.email,
+          role: exitsUser.role,
+          forcePasswordChange: false
+        },
+        token
+      })
+    }
+
 
   } catch (error) {
     console.log(error)

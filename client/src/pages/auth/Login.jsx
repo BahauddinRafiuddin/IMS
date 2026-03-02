@@ -52,10 +52,16 @@ const Login = () => {
       login(data);
 
       toastSuccess("Login successful");
+      if (data.user.forcePasswordChange) {
+        navigate("/change-password");
+        return;
+      }
 
-      if (data.user.role === "super_admin") navigate("/superadmin");
-      else if (data.user.role === "admin") navigate("/admin");
-      else if (data.user.role === "mentor") navigate("/mentor");
+      const role = data.user?.role || data.role;
+
+      if (role === "super_admin") navigate("/superadmin");
+      else if (role === "admin") navigate("/admin");
+      else if (role === "mentor") navigate("/mentor");
       else navigate("/intern");
     } catch (err) {
       toastError(err.response?.data?.message || "Login failed");
