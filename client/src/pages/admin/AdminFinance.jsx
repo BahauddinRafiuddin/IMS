@@ -110,6 +110,7 @@ const AdminFinance = () => {
                   <th className="text-left px-4 py-3">Intern</th>
                   <th className="text-left px-4 py-3">Amount</th>
                   <th className="text-left px-4 py-3">Commission</th>
+                  <th className="text-left px-4 py-3">Commission %</th>
                   <th className="text-left px-4 py-3">Earning</th>
                   <th className="text-left px-4 py-3">Method</th>
                   <th className="text-left px-4 py-3">Date</th>
@@ -132,6 +133,10 @@ const AdminFinance = () => {
 
                     <td className="px-4 py-3 text-indigo-600">
                       ₹{txn.superAdminCommission}
+                    </td>
+
+                    <td className="px-4 py-3 text-indigo-600">
+                      ₹{txn.commissionPercentage}%
                     </td>
 
                     <td className="px-4 py-3 text-green-600 font-semibold">

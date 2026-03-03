@@ -8,6 +8,7 @@ import {
   NotebookPen,
   UserRoundPen,
   Wallet,
+  FileDown 
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
@@ -18,6 +19,7 @@ const Sidebar = ({ onClose }) => {
     super_admin: [
       { name: "Dashboard", path: "/superadmin", icon: LayoutDashboard },
       { name: "Companies", path: "/superadmin/companies", icon: Users },
+      {name:"Transaction Report",path:"/superadmin/report",icon:FileDown }
     ],
     admin: [
       { name: "Dashboard", path: "/admin", icon: LayoutDashboard },

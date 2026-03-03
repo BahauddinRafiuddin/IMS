@@ -28,6 +28,7 @@ const InternPerformance = lazy(
 );
 
 const Companies = lazy(() => import("../pages/superadmin/Companies"));
+const SuperAdminFinance=lazy(()=>import('../pages/superadmin/SuperAdminFinance'))
 const Profile = lazy(() => import("../pages/common/Profile"));
 const SuperAdminLayout = lazy(() => import("../layouts/SuperAdminLayout"));
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
@@ -44,13 +45,18 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/change-password" element={<ForceChangePassword />} />
         <Route element={<ProtectedRoute />}>
+          <Route element={<RoleRoute allowedRoles={["super_admin","intern","mentor","admin"]} />}>
+            <Route path="/change-password" element={<ForceChangePassword />} />
+          </Route>
+
           {/* Super Admin */}
           <Route element={<RoleRoute allowedRoles={["super_admin"]} />}>
             <Route path="/superadmin" element={<SuperAdminLayout />}>
               <Route index element={<SuperAdminDashboard />} />
               <Route path="companies" element={<Companies />} />
+              <Route path="report" element={<SuperAdminFinance />} />
+
             </Route>
           </Route>
 

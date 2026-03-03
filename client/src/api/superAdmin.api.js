@@ -29,9 +29,29 @@ export const getCompanyFinanceOverview = async () => {
 export const getCompanyRevenueDetails = async (companyId) => {
   const res = await api.get(`/superadmin/company-finance/${companyId}`);
   return res.data;
-};
+}
 
-export const getPlatformFinanceStats =async () => {
-  const res=await api.get('/superadmin/platform-finance')
+export const getPlatformFinanceStats = async () => {
+  const res = await api.get('/superadmin/platform-finance')
+  return res.data
+}
+
+export const updateCompanyCommission = async (companyId, commissionPercentage) => {
+  const res = await api.put(
+    `/superadmin/update-comission/${companyId}`,
+    { commissionPercentage }
+  )
+  return res.data
+}
+
+export const getAllTransactionReport = async (
+  filters = {}
+) => {
+  const query = new URLSearchParams(filters).toString()
+
+  const res = await api.get(
+    `/superadmin/transactions?${query}`
+  )
+
   return res.data
 }

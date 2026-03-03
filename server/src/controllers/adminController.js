@@ -868,6 +868,7 @@ export const getAdminFinanceOverview = async (req, res) => {
       superAdminCommission: payment.superAdminCommission,
       companyEarning: payment.companyEarning,
       paymentMethod: payment.paymentMethod,
+      commissionPercentage:payment.commissionPercentage,
       createdAt: payment.createdAt
     }))
     const totalRevenue = payments.reduce((sum, p) => sum + p.totalAmount, 0);
@@ -876,8 +877,8 @@ export const getAdminFinanceOverview = async (req, res) => {
     const totalTransactions = payments.length
 
     const wallet = await CompanyWallet.findOne({ company: req.user.company });
-    const availableBalance = wallet.availableBalance || 0
-    const totalWithdrawn = wallet.totalWithdrawn
+    const availableBalance = wallet?.availableBalance || 0
+    const totalWithdrawn = wallet?.totalWithdrawn
 
     res.status(200).json({
       success: true,

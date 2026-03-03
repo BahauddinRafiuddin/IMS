@@ -2,6 +2,7 @@ import Company from "../models/Company.js";
 import User from "../models/User.js";
 import CompanyWallet from '../models/CompanyWallet.js'
 import Payment from '../models/Payment.js'
+import mongoose from "mongoose";
 
 export const getSuperAdminDashboard = async (req, res) => {
   try {
@@ -73,7 +74,7 @@ export const getPlatformFinanceStats = async (req, res) => {
       message: error.message
     });
   }
-};
+}
 
 export const getCompanyFinanceOverview = async (req, res) => {
   try {
@@ -155,4 +156,92 @@ export const getSingleCompanyFinance = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+}
+
+export const getCompanyTransactionReport = async (req, res) => {
+  try {
+    const { commission, startDate, endDate, companyId } = req.query
+
+    let filter = {
+      paymentStatus: "success"
+    }
+    // Optional company filter
+    if (companyId && mongoose.Types.ObjectId.isValid(companyId)) {
+      filter.company = companyId;
+    }
+    // Filter by commission %
+    if (commission) {
+      filter.commissionPercentage = Number(commission)
+    }
+
+    // Filter by date range
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    const payments = await Payment.find(filter)
+      .populate("intern", "name email")
+      .populate("program", "title price")
+      .populate("company", "name commissionPercentage")
+      .sort({ createdAt: -1 });
+
+    // Global Summary
+    const totalRevenue = payments.reduce((sum, p) => sum + p.totalAmount, 0);
+    const totalCommission = payments.reduce((sum, p) => sum + p.superAdminCommission, 0);
+    const totalCompanyEarning = payments.reduce((sum, p) => sum + p.companyEarning, 0);
+
+    // Commission Breakdown (Global)
+    const breakdown = await Payment.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$commissionPercentage",
+          totalRevenue: { $sum: "$totalAmount" },
+          totalCommission: { $sum: "$superAdminCommission" },
+          totalTransactions: { $sum: 1 }
+        }
+      }
+    ])
+    // Company Wise Summary
+    const companyWise = await Payment.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$company",
+          totalRevenue: { $sum: "$totalAmount" },
+          totalCommission: { $sum: "$superAdminCommission" },
+          totalTransactions: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "_id",
+          foreignField: "_id",
+          as: "company"
+        }
+      },
+      { $unwind: "$company" }
+    ])
+    res.json({
+      success: true,
+      summary: {
+        totalRevenue,
+        totalCommission,
+        totalCompanyEarning,
+        totalTransactions: payments.length
+      },
+      transactions: payments,
+      companyWiseSummary: companyWise,
+      commissionBreakdown: breakdown
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}

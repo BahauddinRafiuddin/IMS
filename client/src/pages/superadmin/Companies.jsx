@@ -5,6 +5,8 @@ import { toastError, toastSuccess } from "../../utils/toast";
 import { getAllcompanies, toggleCompanyStatus } from "../../api/superAdmin.api";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import CompanyRevenueModal from "../../components/superadmin/CompanyRevenueModal";
+import { Pencil } from "lucide-react";
+import EditCommissionModal from "../../components/superadmin/EditCommissionModal";
 
 const SuperAdminCompanies = () => {
   const [companies, setCompanies] = useState([]);
@@ -12,6 +14,7 @@ const SuperAdminCompanies = () => {
   const [openModal, setOpenModal] = useState(false);
   const [toggleStatus, setToggleStatus] = useState(null);
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [editCompany, setEditCompany] = useState(null);
 
   const fetchCompanies = async () => {
     try {
@@ -112,9 +115,18 @@ const SuperAdminCompanies = () => {
 
                     {/* Commission */}
                     <td className="px-6 py-4">
-                      <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-xs font-semibold">
-                        {company.commissionPercentage || 0}%
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-xs font-semibold">
+                          {company.commissionPercentage || 0}%
+                        </span>
+
+                        <button
+                          onClick={() => setEditCompany(company)}
+                          className="text-gray-400 hover:text-indigo-600 transition cursor-pointer"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
                     </td>
 
                     {/* Status */}
@@ -181,6 +193,14 @@ const SuperAdminCompanies = () => {
         <CompanyRevenueModal
           company={selectedCompany}
           onClose={() => setSelectedCompany(null)}
+        />
+      )}
+
+      {editCompany && (
+        <EditCommissionModal
+          company={editCompany}
+          onClose={() => setEditCompany(null)}
+          onSuccess={fetchCompanies}
         />
       )}
     </div>

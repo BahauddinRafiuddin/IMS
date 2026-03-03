@@ -142,8 +142,30 @@ export const createCompany = async (req, res) => {
       message: "Server error while adding company"
     });
   }
-};
+}
 
+export const updateCompanyCommission = async (req, res) => {
+  try {
+    const { companyId } = req.params
+    const { commissionPercentage } = req.body
+
+    const company = await Company.findById(companyId)
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" })
+    }
+
+    company.commissionPercentage = commissionPercentage
+    await company.save()
+
+    res.json({
+      success: true,
+      message: "Commission updated successfully"
+    })
+
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
 export const getAllCompanies = async (req, res) => {
   try {
     const companies = await Company.find()

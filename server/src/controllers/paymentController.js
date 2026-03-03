@@ -98,6 +98,7 @@ export const verifyPayment = async (req, res) => {
       enrollment: enrollment._id,
       totalAmount: amount,
       superAdminCommission,
+      commissionPercentage: commissionPercent,
       companyEarning,
       paymentStatus: "success",
       transactionId: razorpay_payment_id,
