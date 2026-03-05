@@ -1,4 +1,4 @@
-import { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import User from "../models/User.js";
 import InternshipProgram from "../models/InternshipProgram.js";
 import razorpay from "../utils/razorpay.js";
@@ -851,51 +851,113 @@ export const refundPayment = async (req, res) => {
 
 export const getAdminFinanceOverview = async (req, res) => {
   try {
-    const payments = await Payment.find({
-      company: req.user.company,
-      paymentStatus: "success"
-    }).populate("intern")
-      .populate("program")
-      .sort({ createdAt: -1 })
-      .limit(5)
+    const { commission, startDate, endDate } = req.query
+    const companyId = req.user.company
 
-    var transactions = []
-    transactions = payments.map(payment => ({
-      paymentId: payment._id,
-      internName: payment.intern.name,
-      programTitle: payment.program.name,
-      totalAmount: payment.totalAmount,
-      superAdminCommission: payment.superAdminCommission,
-      companyEarning: payment.companyEarning,
-      paymentMethod: payment.paymentMethod,
-      commissionPercentage:payment.commissionPercentage,
-      createdAt: payment.createdAt
-    }))
+    let filter = {
+      paymentStatus: "success",
+      company: new mongoose.Types.ObjectId(companyId)
+    }
+    // Filter by commission %
+    if (commission) {
+      filter.commissionPercentage = Number(commission)
+    }
+
+    // Filter by date range
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      }
+    }
+
+    const payments = await Payment.find(filter)
+      .populate("intern", "name email")
+      .populate("program", "title price")
+      .sort({ createdAt: -1 })
+
     const totalRevenue = payments.reduce((sum, p) => sum + p.totalAmount, 0);
     const totalCommission = payments.reduce((sum, p) => sum + p.superAdminCommission, 0);
     const totalCompanyEarning = payments.reduce((sum, p) => sum + p.companyEarning, 0);
-    const totalTransactions = payments.length
+    const breakdown = await Payment.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$commissionPercentage",
+          totalRevenue: { $sum: "$totalAmount" },
+          totalCommission: { $sum: "$superAdminCommission" },
+          totalEarning: { $sum: "$companyEarning" },
+          totalTransactions: { $sum: 1 }
+        }
+      }
+    ])
 
-    const wallet = await CompanyWallet.findOne({ company: req.user.company });
-    const availableBalance = wallet?.availableBalance || 0
-    const totalWithdrawn = wallet?.totalWithdrawn
-
-    res.status(200).json({
+    res.json({
       success: true,
       summary: {
         totalRevenue,
         totalCommission,
         totalCompanyEarning,
-        totalTransactions,
-        availableBalance,
-        totalWithdrawn
+        totalTransactions: payments.length
       },
-      transactions
+      transactions: payments,
+      commissionBreakdown: breakdown
     })
   } catch (error) {
     res.status(500).json({
       success: false,
       message: error.message
-    });
+    })
   }
 }
+
+// export const getAdminFinanceOverview = async (req, res) => {
+//   try {
+//     const payments = await Payment.find({
+//       company: req.user.company,
+//       paymentStatus: "success"
+//     }).populate("intern")
+//       .populate("program")
+//       .sort({ createdAt: -1 })
+//       .limit(5)
+
+//     var transactions = []
+//     transactions = payments.map(payment => ({
+//       paymentId: payment._id,
+//       internName: payment.intern.name,
+//       programTitle: payment.program.name,
+//       totalAmount: payment.totalAmount,
+//       superAdminCommission: payment.superAdminCommission,
+//       companyEarning: payment.companyEarning,
+//       paymentMethod: payment.paymentMethod,
+//       commissionPercentage: payment.commissionPercentage,
+//       createdAt: payment.createdAt
+//     }))
+//     const totalRevenue = payments.reduce((sum, p) => sum + p.totalAmount, 0);
+//     const totalCommission = payments.reduce((sum, p) => sum + p.superAdminCommission, 0);
+//     const totalCompanyEarning = payments.reduce((sum, p) => sum + p.companyEarning, 0);
+//     const totalTransactions = payments.length
+
+//     const wallet = await CompanyWallet.findOne({ company: req.user.company });
+//     const availableBalance = wallet?.availableBalance || 0
+//     const totalWithdrawn = wallet?.totalWithdrawn
+
+//     res.status(200).json({
+//       success: true,
+//       summary: {
+//         totalRevenue,
+//         totalCommission,
+//         totalCompanyEarning,
+//         totalTransactions,
+//         availableBalance,
+//         totalWithdrawn
+//       },
+//       transactions
+//     })
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// }

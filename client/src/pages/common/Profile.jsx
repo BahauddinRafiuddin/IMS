@@ -25,6 +25,13 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
+  if (!profile) {
+    return (
+      <div className="py-20 text-center text-red-500">
+        Failed to load Profile
+      </div>
+    );
+  }
   if (loading) {
     return (
       <div className="text-center py-20 text-gray-500">
