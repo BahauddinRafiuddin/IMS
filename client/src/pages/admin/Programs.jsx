@@ -239,7 +239,7 @@ const Programs = () => {
                   {program.status === "upcoming" && (
                     <button
                       onClick={() => setSelectedProgram(program)}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg cursor-pointer"
                     >
                       Enroll
                     </button>
@@ -261,10 +261,10 @@ const Programs = () => {
                               : "completed",
                         })
                       }
-                      className={`px-4 py-2 rounded-lg text-white ${
+                      className={`px-4 py-2 rounded-lg text-white  ${
                         program.status === "upcoming"
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : "bg-green-600 hover:bg-green-700"
+                          ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                          : "bg-green-600 hover:bg-green-700 cursor-pointer"
                       }`}
                     >
                       {program.status === "upcoming" ? "Activate" : "Complete"}
@@ -274,7 +274,7 @@ const Programs = () => {
                   {program.status !== "completed" && (
                     <button
                       onClick={() => setEditProgram(program)}
-                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
+                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg cursor-pointer"
                     >
                       Edit
                     </button>

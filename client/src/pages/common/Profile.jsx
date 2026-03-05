@@ -12,6 +12,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
+      setLoading(true)
       const res = await getMyProfile();
       setProfile(res.profile);
     } catch (err) {
