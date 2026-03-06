@@ -9,6 +9,7 @@ import {
 } from "../../api/admin.api";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { User, Mail, Lock, X, Eye, EyeOff, SearchX } from "lucide-react";
+import ConfirmModal from "../../components/common/ConfirmModal";
 
 const Interns = () => {
   const [interns, setInterns] = useState([]);
@@ -18,6 +19,7 @@ const Interns = () => {
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [showForm, setShowForm] = useState(false);
+  const [toggleStatus, setToggleStatus] = useState(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -47,7 +49,9 @@ const Interns = () => {
     try {
       const res = await updateInternStatus(id, status);
       toastSuccess(res.message);
+      setToggleStatus(null);
       fetchData();
+
     } catch (err) {
       toastError(err.response?.data?.message);
     }
@@ -283,9 +287,7 @@ const Interns = () => {
 
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() =>
-                          handleStatusToggle(intern._id, !intern.isActive)
-                        }
+                        onClick={() => setToggleStatus(intern)}
                         className={`
                           cursor-pointer
                           px-4 py-2 rounded-lg text-sm font-medium
@@ -333,9 +335,7 @@ const Interns = () => {
                 </p>
 
                 <button
-                  onClick={() =>
-                    handleStatusToggle(intern._id, !intern.isActive)
-                  }
+                  onClick={() => setToggleStatus(intern)}
                   className={`
                     cursor-pointer
                     w-full py-2 rounded-lg font-medium
@@ -352,6 +352,17 @@ const Interns = () => {
             ))}
           </div>
         </>
+      )}
+
+      {toggleStatus && (
+        <ConfirmModal
+          title="Change Intern Status"
+          message={`Are you sure you want to ${
+            toggleStatus.isActive ? "deactivate" : "activate"
+          } this intern?`}
+          onCancel={() => setToggleStatus(null)}
+          onConfirm={() => handleStatusToggle(toggleStatus._id,!toggleStatus.isActive)}
+        />
       )}
     </div>
   );
