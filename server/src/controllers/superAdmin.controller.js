@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import CompanyWallet from '../models/CompanyWallet.js'
 import Payment from '../models/Payment.js'
 import mongoose from "mongoose";
+import CommissionHistory from "../models/CommissionHistory.js";
 
 export const getSuperAdminDashboard = async (req, res) => {
   try {
@@ -237,6 +238,41 @@ export const getCompanyTransactionReport = async (req, res) => {
       transactions: payments,
       companyWiseSummary: companyWise,
       commissionBreakdown: breakdown
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+export const getAllCompaniesCommissionHistory = async (req, res) => {
+  try {
+    const history = await CommissionHistory.find()
+      .populate("company", "name")
+      .sort({ createdAt: -1 })
+
+    const data = history.map((item) => {
+
+      const start = new Date(item.startDate)
+      const end = item.endDate ? new Date(item.endDate) : new Date()
+
+      const durationDays = Math.ceil(
+        (end - start) / (1000 * 60 * 60 * 24)
+      )
+      return {
+        companyId: item.company._id,
+        companyName: item.company.name,
+        commissionPercentage: item.commissionPercentage,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        durationDays
+      }
+    })
+    res.json({
+      success: true,
+      data
     })
   } catch (error) {
     res.status(500).json({

@@ -29,6 +29,7 @@ const InternPerformance = lazy(
 
 const Companies = lazy(() => import("../pages/superadmin/Companies"));
 const SuperAdminFinance=lazy(()=>import('../pages/superadmin/SuperAdminFinance'))
+const CommissionHistory=lazy(()=>import('../pages/superadmin/CommissionHistory'))
 const Profile = lazy(() => import("../pages/common/Profile"));
 const SuperAdminLayout = lazy(() => import("../layouts/SuperAdminLayout"));
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
@@ -56,6 +57,7 @@ const AppRoutes = () => {
               <Route index element={<SuperAdminDashboard />} />
               <Route path="companies" element={<Companies />} />
               <Route path="report" element={<SuperAdminFinance />} />
+              <Route path="comission-history" element={<CommissionHistory />} />
 
             </Route>
           </Route>

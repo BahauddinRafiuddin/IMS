@@ -55,3 +55,8 @@ export const getAllTransactionReport = async (
 
   return res.data
 }
+
+export const getAllCompaniesCommissionHistory = async () => {
+  const res = await api.get('/superadmin/comission-history')
+  return res.data
+}

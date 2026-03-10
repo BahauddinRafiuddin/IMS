@@ -149,7 +149,7 @@ const SuperAdminFinance = () => {
                 <tr key={b._id}>
                   <td className="px-4 py-3">{b._id}%</td>
                   <td className="px-4 py-3">₹{b.totalRevenue}</td>
-                  <td className="px-4 py-3 text--600 font-semibold">
+                  <td className="px-4 py-3 text-green-600 font-semibold">
                     ₹{b.totalCommission}
                   </td>
                   <td className="px-4 py-3">{b.totalTransactions}</td>

@@ -8,7 +8,8 @@ import {
   NotebookPen,
   UserRoundPen,
   Wallet,
-  FileDown 
+  FileDown, 
+  History
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
@@ -19,7 +20,9 @@ const Sidebar = ({ onClose }) => {
     super_admin: [
       { name: "Dashboard", path: "/superadmin", icon: LayoutDashboard },
       { name: "Companies", path: "/superadmin/companies", icon: Users },
-      {name:"Transaction Report",path:"/superadmin/report",icon:FileDown }
+      {name:"Transaction Report",path:"/superadmin/report",icon:FileDown },
+      {name:"Comission History",path:"/superadmin/comission-history",icon:History }
+
     ],
     admin: [
       { name: "Dashboard", path: "/admin", icon: LayoutDashboard },

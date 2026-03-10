@@ -2,6 +2,7 @@ import User from '../models/User.js'
 import Company from '../models/Company.js'
 import { sendEmail } from "../utils/sendEmail.js"
 import { generateTempPassword } from '../utils/generatePassword.js';
+import CommissionHistory from '../models/CommissionHistory.js';
 
 // export const createCompany = async (req, res) => {
 //   try {
@@ -95,8 +96,14 @@ export const createCompany = async (req, res) => {
       phone,
       address,
       commissionPercentage
-    });
+    })
 
+    // Create Comission History
+    await CommissionHistory.create({
+      company: company._id,
+      commissionPercentage: company.commissionPercentage,
+      startDate: new Date()
+    })
     // Create Admin
     const admin = await User.create({
       name: adminName,
@@ -153,7 +160,18 @@ export const updateCompanyCommission = async (req, res) => {
     if (!company) {
       return res.status(404).json({ message: "Company not found" })
     }
+    await CommissionHistory.findOneAndUpdate(
+      { company: companyId, endDate: null },
+      { endDate: new Date() }
+    )
 
+    // Create new history entry
+    await CommissionHistory.create({
+      company: companyId,
+      commissionPercentage,
+      startDate: new Date(),
+      updatedBy: req.user._id
+    })
     company.commissionPercentage = commissionPercentage
     await company.save()
 
