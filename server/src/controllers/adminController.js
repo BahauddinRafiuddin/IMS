@@ -8,6 +8,7 @@ import Enrollment from "../models/Enrollment.js";
 import Payment from "../models/Payment.js";
 import CompanyWallet from "../models/CompanyWallet.js";
 import { generateTempPassword } from "../utils/generatePassword.js";
+import Review from "../models/Review.js";
 
 
 // Admin Auth Controllers
@@ -911,53 +912,23 @@ export const getAdminFinanceOverview = async (req, res) => {
   }
 }
 
-// export const getAdminFinanceOverview = async (req, res) => {
-//   try {
-//     const payments = await Payment.find({
-//       company: req.user.company,
-//       paymentStatus: "success"
-//     }).populate("intern")
-//       .populate("program")
-//       .sort({ createdAt: -1 })
-//       .limit(5)
+export const getCompanyReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({
+      company: req.user.company,
+      status: "approved"
+    })
+      .populate("intern", "name")
+      .sort({ createdAt: -1 })
 
-//     var transactions = []
-//     transactions = payments.map(payment => ({
-//       paymentId: payment._id,
-//       internName: payment.intern.name,
-//       programTitle: payment.program.name,
-//       totalAmount: payment.totalAmount,
-//       superAdminCommission: payment.superAdminCommission,
-//       companyEarning: payment.companyEarning,
-//       paymentMethod: payment.paymentMethod,
-//       commissionPercentage: payment.commissionPercentage,
-//       createdAt: payment.createdAt
-//     }))
-//     const totalRevenue = payments.reduce((sum, p) => sum + p.totalAmount, 0);
-//     const totalCommission = payments.reduce((sum, p) => sum + p.superAdminCommission, 0);
-//     const totalCompanyEarning = payments.reduce((sum, p) => sum + p.companyEarning, 0);
-//     const totalTransactions = payments.length
-
-//     const wallet = await CompanyWallet.findOne({ company: req.user.company });
-//     const availableBalance = wallet?.availableBalance || 0
-//     const totalWithdrawn = wallet?.totalWithdrawn
-
-//     res.status(200).json({
-//       success: true,
-//       summary: {
-//         totalRevenue,
-//         totalCommission,
-//         totalCompanyEarning,
-//         totalTransactions,
-//         availableBalance,
-//         totalWithdrawn
-//       },
-//       transactions
-//     })
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: error.message
-//     });
-//   }
-// }
+    res.json({
+      success: true,
+      reviews
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}

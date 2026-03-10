@@ -13,12 +13,14 @@ const Interns = lazy(() => import("../pages/admin/Interns"));
 const Mentors = lazy(() => import("../pages/admin/Mentors"));
 const Programs = lazy(() => import("../pages/admin/Programs"));
 const AdminFinance = lazy(() => import("../pages/admin/AdminFinance"));
+const CompanyReviews= lazy(() => import("../pages/admin/CompanyReviews"));
 
 const Certificate = lazy(() => import("../pages/intern/Certificate"));
 const InternPrograms = lazy(() => import("../pages/intern/InternProgram"));
 const InternTasks = lazy(() => import("../pages/intern/InternTasks"));
 const Performance = lazy(() => import("../pages/intern/Performance"));
 const InternPayments = lazy(() => import("../pages/intern/InternPayments"));
+const InternCreateReview=lazy(() => import("../pages/intern/InternCreateReview"));
 
 const MentorPrograms = lazy(() => import("../pages/mentor/MentorPrograms"));
 const MentorTasks = lazy(() => import("../pages/mentor/MentorTasks"));
@@ -30,6 +32,8 @@ const InternPerformance = lazy(
 const Companies = lazy(() => import("../pages/superadmin/Companies"));
 const SuperAdminFinance=lazy(()=>import('../pages/superadmin/SuperAdminFinance'))
 const CommissionHistory=lazy(()=>import('../pages/superadmin/CommissionHistory'))
+const PendingReviews=lazy(()=>import('../pages/superadmin/PendingReviews'))
+
 const Profile = lazy(() => import("../pages/common/Profile"));
 const SuperAdminLayout = lazy(() => import("../layouts/SuperAdminLayout"));
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
@@ -58,7 +62,7 @@ const AppRoutes = () => {
               <Route path="companies" element={<Companies />} />
               <Route path="report" element={<SuperAdminFinance />} />
               <Route path="comission-history" element={<CommissionHistory />} />
-
+              <Route path="pending-review" element={<PendingReviews />} />
             </Route>
           </Route>
 
@@ -71,6 +75,8 @@ const AppRoutes = () => {
               <Route path="mentors" element={<Mentors />} />
               <Route path="programs" element={<Programs />} />
               <Route path="finance" element={<AdminFinance />} />
+              <Route path="reviews" element={<CompanyReviews />} />
+
             </Route>
           </Route>
 
@@ -96,6 +102,8 @@ const AppRoutes = () => {
               <Route path="performance" element={<Performance />} />
               <Route path="certificate" element={<Certificate />} />
               <Route path="payments" element={<InternPayments />} />
+              <Route path="review" element={<InternCreateReview />} />
+
             </Route>
           </Route>
         </Route>

@@ -48,7 +48,12 @@ export const verifyPayment = async (paymentData) => {
   return res.data;
 };
 
-export const getInternPaymentHistory=async () => {
-  const res=await api.get('/intern/payment-history')
+export const getInternPaymentHistory = async () => {
+  const res = await api.get('/intern/payment-history')
+  return res.data
+}
+
+export const createReview = async (reviewData) => {
+  const res = await api.post('/intern/review', reviewData)
   return res.data
 }

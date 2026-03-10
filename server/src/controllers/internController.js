@@ -3,6 +3,7 @@ import Task from "../models/Task.js"
 import { isValidObjectId } from "mongoose";
 import User from "../models/User.js";
 import Payment from '../models/Payment.js'
+import Review from "../models/Review.js";
 
 export const getMyProgram = async (req, res) => {
   try {
@@ -289,8 +290,63 @@ export const getInternPaymentHistory = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({  
+    res.status(500).json({
       success: false,
+      message: error.message
+    });
+  }
+}
+
+export const createReview = async (req, res) => {
+  try {
+
+    const { rating, comment } = req.body;
+
+    // Find completed enrollment of logged in intern
+    const enrollment = await Enrollment.findOne({
+      intern: req.user._id,
+      status: "completed"
+    }).populate("program");
+
+    if (!enrollment) {
+      return res.status(404).json({
+        message: "Completed enrollment not found"
+      });
+    }
+
+    // Prevent duplicate review
+    const existingReview = await Review.findOne({
+      enrollment: enrollment._id
+    });
+
+    if (existingReview) {
+      return res.status(400).json({
+        message: "Review already submitted"
+      });
+    }
+
+    // Comment moderation rule
+    const reviewStatus = comment ? "pending" : "approved";
+
+    await Review.create({
+      intern: req.user._id,
+      company: enrollment.program.company,
+      program: enrollment.program._id,
+      enrollment: enrollment._id,
+      rating,
+      comment,
+      status: reviewStatus
+    });
+
+    res.json({
+      success: true,
+      message: comment
+        ? "Review submitted for admin approval"
+        : "Rating submitted successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({
       message: error.message
     });
   }

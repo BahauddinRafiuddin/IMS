@@ -45,8 +45,12 @@ export const deleteMentorById = async (mentorId) => {
   const res = await api.delete(`/admin/mentor/${mentorId}/delete`)
   return res.data
 }
-export const getAdminFinanceOverview = async (  filters = {}) => {
+export const getAdminFinanceOverview = async (filters = {}) => {
   const query = new URLSearchParams(filters).toString()
   const res = await api.get(`/admin/finance-overview?${query}`);
   return res.data;
-};
+}
+export const getCompanyReviews = async () => {
+  const res = await api.get('/admin/reviews')
+  return res.data
+}

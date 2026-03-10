@@ -9,7 +9,10 @@ import {
   UserRoundPen,
   Wallet,
   FileDown, 
-  History
+  History,
+  Star    ,
+  ShieldCheck ,
+  MessageSquare 
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
@@ -21,7 +24,9 @@ const Sidebar = ({ onClose }) => {
       { name: "Dashboard", path: "/superadmin", icon: LayoutDashboard },
       { name: "Companies", path: "/superadmin/companies", icon: Users },
       {name:"Transaction Report",path:"/superadmin/report",icon:FileDown },
-      {name:"Comission History",path:"/superadmin/comission-history",icon:History }
+      {name:"Comission History",path:"/superadmin/comission-history",icon:History },
+      {name:"Pending Review",path:"/superadmin/pending-review",icon:ShieldCheck  }
+
 
     ],
     admin: [
@@ -31,6 +36,8 @@ const Sidebar = ({ onClose }) => {
       { name: "Mentors", path: "/admin/mentors", icon: GraduationCap },
       { name: "Programs", path: "/admin/programs", icon: BookOpen },
       { name: "Finance Overview", path: "/admin/finance", icon: Wallet },
+      { name: "Reviews", path: "/admin/reviews", icon: MessageSquare  },
+
     ],
 
     intern: [
@@ -41,6 +48,8 @@ const Sidebar = ({ onClose }) => {
       { name: "Performance", path: "/intern/performance", icon: GraduationCap },
       { name: "Certificate", path: "/intern/certificate", icon: BookOpen },
       { name: "Payment History", path: "/intern/payments", icon: Wallet },
+      { name: "Review", path: "/intern/review", icon:Star    },
+
     ],
 
     mentor: [

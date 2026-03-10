@@ -4,6 +4,7 @@ import CompanyWallet from '../models/CompanyWallet.js'
 import Payment from '../models/Payment.js'
 import mongoose from "mongoose";
 import CommissionHistory from "../models/CommissionHistory.js";
+import Review from "../models/Review.js";
 
 export const getSuperAdminDashboard = async (req, res) => {
   try {
@@ -273,6 +274,61 @@ export const getAllCompaniesCommissionHistory = async (req, res) => {
     res.json({
       success: true,
       data
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+export const getPendingReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ status: "pending" })
+      .populate("intern", "name")
+      .populate("company", "name")
+      .populate("program", "title")
+
+    res.json({
+      success: true,
+      reviews
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+export const approveReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params
+    await Review.findByIdAndUpdate(reviewId, {
+      status: "approved"
+    })
+    res.json({
+      success: true,
+      message: "Review approved"
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+export const rejectReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params
+    await Review.findByIdAndUpdate(reviewId, {
+      status: "rejected"
+    })
+    res.json({
+      success: true,
+      message: "Review rejected"
     })
   } catch (error) {
     res.status(500).json({
