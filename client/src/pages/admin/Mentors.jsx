@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 
 import ConfirmModal from "../../components/common/ConfirmModal";
+import TableExportButtons from "../../components/common/TableExportButtons";
+import Pagination from "../../components/common/Pagination";
 
 const Mentors = () => {
   const [mentors, setMentors] = useState([]);
@@ -28,6 +30,8 @@ const Mentors = () => {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [errors, setErrors] = useState({});
+  const [page, setPage] = useState(1);
+  const limit = 1;
 
   const [deleteMentor, setDeleteMentor] = useState(null);
 
@@ -106,7 +110,6 @@ const Mentors = () => {
   };
 
   /* ================= DELETE ================= */
-
   const handleDelete = async () => {
     try {
       const res = await deleteMentorById(deleteMentor._id);
@@ -117,7 +120,18 @@ const Mentors = () => {
       toastError(err.response?.data?.message || "Delete failed");
     }
   };
+  // Pagination logic
+  const start = (page - 1) * limit;
+  const paginatedMentors = mentors.slice(start, start + limit);
+  const totalPages = Math.ceil(mentors.length / limit);
 
+  const exportData = mentors.map((m) => ({
+    Name: m.name,
+    Email: m.email,
+    "Total Interns": m.internCount || 0,
+  }));
+
+  const columns = ["Name", "Email", "Total Interns"];
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 space-y-8">
       {/* ================= CONFIRM MODAL ================= */}
@@ -139,7 +153,7 @@ const Mentors = () => {
           <p className="text-gray-500 mt-1">Manage mentors and add interns</p>
         </div>
 
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full">
           <input
             placeholder="Search mentors..."
             value={search}
@@ -147,12 +161,19 @@ const Mentors = () => {
             className="w-full md:w-72 px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none"
           />
 
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium cursor-pointer whitespace-nowrap"
-          >
-            + Add Mentor
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <TableExportButtons
+              data={exportData}
+              columns={columns}
+              fileName="mentors"
+            />
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium cursor-pointer whitespace-nowrap"
+            >
+              + Add Mentor
+            </button>
+          </div>
         </div>
       </div>
 
@@ -252,9 +273,9 @@ const Mentors = () => {
         </div>
       ) : (
         <>
-          {/* ================= DESKTOP TABLE ================= */}
-          <div className="hidden lg:block bg-white rounded-2xl shadow overflow-hidden">
-            <table className="w-full">
+          {/* ================= TABLE ================= */}
+          <div className="bg-white rounded-2xl shadow overflow-x-auto">
+            <table className="w-full min-w-150">
               <thead className="bg-gray-100">
                 <tr>
                   <th className="px-6 py-4 text-left">Mentor</th>
@@ -265,17 +286,20 @@ const Mentors = () => {
               </thead>
 
               <tbody>
-                {mentors.map((mentor) => (
+                {paginatedMentors.map((mentor) => (
                   <tr key={mentor._id} className="border-t hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium">{mentor.name}</td>
+
                     <td className="px-6 py-4 text-gray-600">{mentor.email}</td>
+
                     <td className="px-6 py-4 text-center font-semibold">
                       {mentor.internCount || 0}
                     </td>
-                    <td className="px-6 py-4 flex justify-center items-center">
+
+                    <td className="px-6 py-4 text-center">
                       <Trash2
                         size={18}
-                        className="text-red-500 hover:text-red-700 cursor-pointer"
+                        className="text-red-500 hover:text-red-700 cursor-pointer mx-auto"
                         onClick={() => setDeleteMentor(mentor)}
                       />
                     </td>
@@ -284,39 +308,8 @@ const Mentors = () => {
               </tbody>
             </table>
           </div>
-
-          {/* ================= MOBILE CARDS ================= */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:hidden">
-            {mentors.map((mentor) => (
-              <div
-                key={mentor._id}
-                className="bg-white rounded-2xl shadow p-5 space-y-3"
-              >
-                <div className="flex justify-between items-start">
-                  <h2 className="font-semibold text-lg">{mentor.name}</h2>
-
-                  <Trash2
-                    size={18}
-                    className="text-red-500 cursor-pointer"
-                    onClick={() => setDeleteMentor(mentor)}
-                  />
-                </div>
-
-                <p className="text-gray-600 text-sm">{mentor.email}</p>
-
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-sm text-gray-500 flex items-center gap-1">
-                    <Users size={16} />
-                    Interns
-                  </span>
-
-                  <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                    {mentor.internCount || 0}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* ================= PAGINATION ================= */}
+            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
         </>
       )}
     </div>

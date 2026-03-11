@@ -5,8 +5,9 @@ import { toastError, toastSuccess } from "../../utils/toast";
 import { getAllcompanies, toggleCompanyStatus } from "../../api/superAdmin.api";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import CompanyRevenueModal from "../../components/superadmin/CompanyRevenueModal";
-import { Pencil } from "lucide-react";
+import { Pencil ,History} from "lucide-react";
 import EditCommissionModal from "../../components/superadmin/EditCommissionModal";
+import CompanyCommissionHistoryModal from "../../components/superadmin/CompanyCommissionHistoryModal";
 
 const SuperAdminCompanies = () => {
   const [companies, setCompanies] = useState([]);
@@ -15,6 +16,7 @@ const SuperAdminCompanies = () => {
   const [toggleStatus, setToggleStatus] = useState(null);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [editCompany, setEditCompany] = useState(null);
+  const [commissionCompany, setCommissionCompany] = useState(null);
 
   const fetchCompanies = async () => {
     try {
@@ -144,8 +146,8 @@ const SuperAdminCompanies = () => {
 
                     {/* Actions */}
                     <td className="px-6 py-4">
-                      <div className="flex justify-end items-center gap-4">
-                        {/* Revenue Button */}
+                      <div className="flex justify-end items-center gap-3">
+                        {/* Revenue */}
                         <button
                           onClick={() => setSelectedCompany(company)}
                           className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition cursor-pointer"
@@ -153,7 +155,16 @@ const SuperAdminCompanies = () => {
                           Revenue
                         </button>
 
-                        {/* Toggle Button */}
+                        {/* Commission History */}
+                        <button
+                          onClick={() => setCommissionCompany(company)}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition cursor-pointer"
+                        >
+                          <History size={14} />
+                          History
+                        </button>
+
+                        {/* Toggle */}
                         <button
                           onClick={() => setToggleStatus(company)}
                           className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer"
@@ -201,6 +212,12 @@ const SuperAdminCompanies = () => {
           company={editCompany}
           onClose={() => setEditCompany(null)}
           onSuccess={fetchCompanies}
+        />
+      )}
+      {commissionCompany && (
+        <CompanyCommissionHistoryModal
+          company={commissionCompany}
+          onClose={() => setCommissionCompany(null)}
         />
       )}
     </div>

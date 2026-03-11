@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
-import {
-  IndianRupee,
-  BookOpen,
-  Calendar,
-  Receipt
-} from "lucide-react";
+import { IndianRupee, BookOpen, Calendar, Receipt } from "lucide-react";
 import { getInternPaymentHistory } from "../../api/intern.api";
 import StatCard from "../../components/ui/StatCard";
+import TableExportButtons from "../../components/common/TableExportButtons";
 
 const InternPayments = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const limit = 5;
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -44,15 +42,25 @@ const InternPayments = () => {
   }
 
   const { summary, payments } = data;
+  const start = (page - 1) * limit;
+  const paginatedPayments = payments.slice(start, start + limit);
+  const totalPages = Math.ceil(payments.length / limit);
+  const exportData = payments.map((p) => ({
+    Program: p.programTitle,
+    Company: p.companyName,
+    Amount: `₹${p.amount}`,
+    Method: p.paymentMethod,
+    Status: p.status,
+    Date: new Date(p.createdAt).toLocaleDateString(),
+  }));
+
+  const columns = ["Program", "Company", "Amount", "Method", "Status", "Date"];
 
   return (
     <div className="space-y-10">
-
       {/* ================= HEADER ================= */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Payment History
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-900">Payment History</h1>
         <p className="text-gray-500 mt-1">
           View all your internship payment records
         </p>
@@ -60,7 +68,6 @@ const InternPayments = () => {
 
       {/* ================= SUMMARY CARDS ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-
         <StatCard
           title="Total Amount Paid"
           value={`₹${summary.totalPaid}`}
@@ -85,14 +92,21 @@ const InternPayments = () => {
           icon={Calendar}
           color="bg-indigo-600"
         />
-
       </div>
 
       {/* ================= TRANSACTION TABLE ================= */}
       <div className="bg-white rounded-2xl shadow-sm border p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-6">
-          Transaction Details
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Transaction Details
+          </h2>
+
+          <TableExportButtons
+            data={exportData}
+            columns={columns}
+            fileName="payment-history"
+          />
+        </div>
 
         {payments.length === 0 ? (
           <div className="text-center py-10 text-gray-500">
@@ -101,7 +115,6 @@ const InternPayments = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
                   <th className="text-left px-4 py-3">Program</th>
@@ -114,7 +127,7 @@ const InternPayments = () => {
               </thead>
 
               <tbody className="divide-y">
-                {payments.map((payment) => (
+                {paginatedPayments.map((payment) => (
                   <tr
                     key={payment.paymentId}
                     className="hover:bg-gray-50 transition"
@@ -147,12 +160,33 @@ const InternPayments = () => {
                   </tr>
                 ))}
               </tbody>
-
             </table>
+            {totalPages > 1 && (
+              <div className="flex justify-end items-center gap-3 mt-6">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                  className="px-4 py-2 border rounded-lg disabled:opacity-50"
+                >
+                  Prev
+                </button>
+
+                <span className="text-sm font-medium">
+                  Page {page} of {totalPages}
+                </span>
+
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  className="px-4 py-2 border rounded-lg disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
-
     </div>
   );
 };

@@ -24,7 +24,6 @@ const Sidebar = ({ onClose }) => {
       { name: "Dashboard", path: "/superadmin", icon: LayoutDashboard },
       { name: "Companies", path: "/superadmin/companies", icon: Users },
       {name:"Transaction Report",path:"/superadmin/report",icon:FileDown },
-      {name:"Comission History",path:"/superadmin/comission-history",icon:History },
       {name:"Pending Review",path:"/superadmin/pending-review",icon:ShieldCheck  }
 
 

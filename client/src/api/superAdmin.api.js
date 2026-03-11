@@ -60,7 +60,10 @@ export const getAllCompaniesCommissionHistory = async () => {
   const res = await api.get('/superadmin/comission-history')
   return res.data
 }
-
+export const getSingleCompanyComissionHistory = async (companyId) => {
+  const res = await api.get(`/superadmin/comission-history/${companyId}`)
+  return res.data
+}
 export const getPendingReviews = async () => {
   const res = await api.get('/superadmin/pending-reviews')
   return res.data

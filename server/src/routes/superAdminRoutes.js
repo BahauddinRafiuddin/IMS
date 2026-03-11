@@ -1,7 +1,7 @@
 import express from 'express'
 import { authMiddleware } from '../middlewares/authMiddleware.js'
 import { roleMiddleware } from '../middlewares/roleMiddleware.js'
-import { approveReview, getAllCompaniesCommissionHistory, getCompanyFinanceOverview, getCompanyTransactionReport, getPendingReviews, getPlatformFinanceStats, getSingleCompanyFinance, getSuperAdminDashboard, rejectReview } from '../controllers/superAdmin.controller.js'
+import { approveReview, getAllCompaniesCommissionHistory, getCompanyFinanceOverview, getCompanyTransactionReport, getPendingReviews, getPlatformFinanceStats, getSingleCompanyComissionHistory, getSingleCompanyFinance, getSuperAdminDashboard, rejectReview } from '../controllers/superAdmin.controller.js'
 import { updateCompanyCommission } from '../controllers/companyController.js'
 
 const superAdminRouter = express.Router()
@@ -10,6 +10,7 @@ superAdminRouter.get('/dashboard', authMiddleware, roleMiddleware('super_admin')
 superAdminRouter.get('/platform-finance', authMiddleware, roleMiddleware('super_admin'), getPlatformFinanceStats)
 superAdminRouter.put('/update-comission/:companyId', authMiddleware, roleMiddleware('super_admin'), updateCompanyCommission)
 superAdminRouter.get('/comission-history', authMiddleware, roleMiddleware('super_admin'), getAllCompaniesCommissionHistory)
+superAdminRouter.get('/comission-history/:companyId',authMiddleware, roleMiddleware('super_admin'),getSingleCompanyComissionHistory)
 
 superAdminRouter.get('/finance-data', authMiddleware, roleMiddleware('super_admin'), getCompanyFinanceOverview)
 superAdminRouter.get('/company-finance/:companyId', authMiddleware, roleMiddleware('super_admin'), getSingleCompanyFinance)

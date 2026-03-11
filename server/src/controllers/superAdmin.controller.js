@@ -247,7 +247,42 @@ export const getCompanyTransactionReport = async (req, res) => {
     })
   }
 }
+export const getSingleCompanyComissionHistory = async (req, res) => {
+  try {
+    const { companyId } = req.params
+    const history = await CommissionHistory.find({ company: companyId })
+      .populate("company", "name")
+      .sort({ createdAt: -1 })
 
+    const data = history.map((item) => {
+
+      const start = new Date(item.startDate)
+      const end = item.endDate ? new Date(item.endDate) : new Date()
+
+      const durationDays = Math.ceil(
+        (end - start) / (1000 * 60 * 60 * 24)
+      )
+      return {
+        companyId: item.company._id,
+        companyName: item.company.name,
+        commissionPercentage: item.commissionPercentage,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        durationDays
+      }
+    })
+    res.json({
+      success: true,
+      data
+    })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    })
+  }
+}
 export const getAllCompaniesCommissionHistory = async (req, res) => {
   try {
     const history = await CommissionHistory.find()

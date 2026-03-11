@@ -1,15 +1,14 @@
-/* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  assignMentor,
   createIntern,
   getAllInterns,
-  getAllMentors,
   updateInternStatus,
 } from "../../api/admin.api";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { User, Mail, Lock, X, Eye, EyeOff, SearchX } from "lucide-react";
 import ConfirmModal from "../../components/common/ConfirmModal";
+import TableExportButtons from "../../components/common/TableExportButtons";
+import Pagination from "../../components/common/Pagination";
 
 const Interns = () => {
   const [interns, setInterns] = useState([]);
@@ -20,6 +19,8 @@ const Interns = () => {
   const [errors, setErrors] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [toggleStatus, setToggleStatus] = useState(null);
+  const [page, setPage] = useState(1);
+  const limit = 5;
 
   const [form, setForm] = useState({
     name: "",
@@ -51,7 +52,6 @@ const Interns = () => {
       toastSuccess(res.message);
       setToggleStatus(null);
       fetchData();
-
     } catch (err) {
       toastError(err.response?.data?.message);
     }
@@ -77,6 +77,11 @@ const Interns = () => {
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
+
+  // Pagination logic
+  const start = (page - 1) * limit;
+  const paginatedInterns = interns.slice(start, start + limit);
+  const totalPages = Math.ceil(interns.length / limit);
 
   const validate = () => {
     let err = {};
@@ -112,6 +117,18 @@ const Interns = () => {
   //   return (
   //     <div className="py-20 text-center text-gray-500">Loading interns...</div>
   //   );
+
+  // ================= EXPORT DATA =================
+  const exportData = interns.map((i) => ({
+    Name: i.name,
+    Email: i.email,
+    Status: i.isActive ? "Active" : "Inactive",
+    Mentor:
+      i.mentor?.name ||
+      "Not assigned sdhhakdak akdjakdsjaks askajsaksjak askajsaksjak askajsaksjak askajsaksjak askajsaksjak",
+  }));
+
+  const columns = ["Name", "Email", "Status", "Mentor"];
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 space-y-8">
       {/* ================= HEADER ================= */}
@@ -123,7 +140,8 @@ const Interns = () => {
           <p className="text-gray-500 mt-1">Manage intern and add intern</p>
         </div>
 
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full">
+          {/* SEARCH */}
           <input
             placeholder="Search interns..."
             value={search}
@@ -131,12 +149,21 @@ const Interns = () => {
             className="w-full md:w-72 px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none"
           />
 
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium cursor-pointer whitespace-nowrap"
-          >
-            + Add Intern
-          </button>
+          {/* ACTION BUTTONS */}
+          <div className="flex flex-wrap items-center gap-3">
+            <TableExportButtons
+              data={exportData}
+              columns={columns}
+              fileName="interns"
+            />
+
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium cursor-pointer whitespace-nowrap"
+            >
+              + Add Intern
+            </button>
+          </div>
         </div>
       </div>
       {/* ================= CREATE FORM ================= */}
@@ -234,9 +261,9 @@ const Interns = () => {
         </div>
       ) : (
         <>
-          {/* ================= DESKTOP TABLE ================= */}
-          <div className="hidden lg:block bg-white rounded-2xl shadow overflow-hidden">
-            <table className="w-full">
+          {/* ================= TABLE ================= */}
+          <div className="bg-white rounded-2xl shadow overflow-x-auto">
+            <table className="w-full min-w-175">
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold">
@@ -258,7 +285,7 @@ const Interns = () => {
               </thead>
 
               <tbody>
-                {interns.map((intern) => (
+                {paginatedInterns.map((intern) => (
                   <tr
                     key={intern._id}
                     className="border-t hover:bg-gray-50 transition"
@@ -288,15 +315,12 @@ const Interns = () => {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => setToggleStatus(intern)}
-                        className={`
-                          cursor-pointer
-                          px-4 py-2 rounded-lg text-sm font-medium
-                          ${
-                            intern.isActive
-                              ? "bg-red-600 hover:bg-red-700 text-white"
-                              : "bg-green-600 hover:bg-green-700 text-white"
-                          }
-                        `}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer
+                ${
+                  intern.isActive
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                }`}
                       >
                         {intern.isActive ? "Deactivate" : "Activate"}
                       </button>
@@ -306,51 +330,8 @@ const Interns = () => {
               </tbody>
             </table>
           </div>
-
-          {/* ================= MOBILE CARDS ================= */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:hidden">
-            {interns.map((intern) => (
-              <div
-                key={intern._id}
-                className="bg-white rounded-2xl shadow p-5 space-y-4"
-              >
-                <div className="flex justify-between items-start">
-                  <h2 className="font-semibold text-lg">{intern.name}</h2>
-
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      intern.isActive
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {intern.isActive ? "Active" : "Inactive"}
-                  </span>
-                </div>
-
-                <p className="text-sm text-gray-600">{intern.email}</p>
-
-                <p className="text-sm">
-                  <b>Mentor:</b> {intern.mentor?.name || "Not assigned"}
-                </p>
-
-                <button
-                  onClick={() => setToggleStatus(intern)}
-                  className={`
-                    cursor-pointer
-                    w-full py-2 rounded-lg font-medium
-                    ${
-                      intern.isActive
-                        ? "bg-red-600 hover:bg-red-700 text-white"
-                        : "bg-green-600 hover:bg-green-700 text-white"
-                    }
-                  `}
-                >
-                  {intern.isActive ? "Deactivate" : "Activate"}
-                </button>
-              </div>
-            ))}
-          </div>
+          {/* ================= PAGINATION ================= */}
+            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
         </>
       )}
 
@@ -361,7 +342,9 @@ const Interns = () => {
             toggleStatus.isActive ? "deactivate" : "activate"
           } this intern?`}
           onCancel={() => setToggleStatus(null)}
-          onConfirm={() => handleStatusToggle(toggleStatus._id,!toggleStatus.isActive)}
+          onConfirm={() =>
+            handleStatusToggle(toggleStatus._id, !toggleStatus.isActive)
+          }
         />
       )}
     </div>
