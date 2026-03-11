@@ -88,8 +88,9 @@ const InternCreateReview = () => {
 
         {/* NOTE */}
         <div className="bg-gray-50 border rounded-lg p-3 text-xs text-gray-500">
-          ⭐ Rating will be shown directly to the company. 💬 Comments will be
-          reviewed by the admin before publishing.
+          ⭐ Ratings are shared directly with the company. 💬 Comments are
+          automatically checked by our AI moderation system to ensure respectful
+          feedback before being published.
         </div>
 
         {/* BUTTON */}

@@ -4,6 +4,7 @@ import { isValidObjectId } from "mongoose";
 import User from "../models/User.js";
 import Payment from '../models/Payment.js'
 import Review from "../models/Review.js";
+import { analyzeComment } from "../utils/moderateReview.js";
 
 export const getMyProgram = async (req, res) => {
   try {
@@ -326,7 +327,30 @@ export const createReview = async (req, res) => {
     }
 
     // Comment moderation rule
-    const reviewStatus = comment ? "pending" : "approved";
+    let reviewStatus = "approved"
+    // const reviewStatus = comment ? "pending" : "approved";
+    if (comment) {
+
+      const scores = await analyzeComment(comment);
+
+      if (scores) {
+        const toxicity = scores.TOXICITY.summaryScore.value;
+        const insult = scores.INSULT.summaryScore.value;
+        const profanity = scores.PROFANITY.summaryScore.value;
+        const threat = scores.THREAT.summaryScore.value;
+        const identityAttack = scores.IDENTITY_ATTACK.summaryScore.value;
+        // If toxic comment detected
+        if (
+          toxicity > 0.7 ||
+          insult > 0.7 ||
+          profanity > 0.7 ||
+          threat > 0.6 ||
+          identityAttack > 0.7
+        ) {
+          reviewStatus = "pending";
+        }
+      }
+    }
 
     await Review.create({
       intern: req.user._id,
@@ -336,18 +360,19 @@ export const createReview = async (req, res) => {
       rating,
       comment,
       status: reviewStatus
-    });
+    })
 
     res.json({
       success: true,
-      message: comment
-        ? "Review submitted for admin approval"
-        : "Rating submitted successfully"
-    });
+      message:
+        reviewStatus === "approved"
+          ? "Review submitted successfully"
+          : "Your review is under admin review due to language check"
+    })
 
   } catch (error) {
     res.status(500).json({
       message: error.message
     });
   }
-};
+}
