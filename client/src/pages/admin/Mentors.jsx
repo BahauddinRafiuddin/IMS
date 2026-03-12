@@ -31,7 +31,7 @@ const Mentors = () => {
   const [search, setSearch] = useState("");
   const [errors, setErrors] = useState({});
   const [page, setPage] = useState(1);
-  const limit = 1;
+  const limit = 5;
 
   const [deleteMentor, setDeleteMentor] = useState(null);
 

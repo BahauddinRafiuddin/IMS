@@ -125,7 +125,7 @@ const Interns = () => {
     Status: i.isActive ? "Active" : "Inactive",
     Mentor:
       i.mentor?.name ||
-      "Not assigned sdhhakdak akdjakdsjaks askajsaksjak askajsaksjak askajsaksjak askajsaksjak askajsaksjak",
+      "Not assigned",
   }));
 
   const columns = ["Name", "Email", "Status", "Mentor"];

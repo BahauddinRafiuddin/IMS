@@ -31,15 +31,17 @@ const CompanyCommissionHistoryModal = ({ company, onClose }) => {
 
   const start = (page - 1) * limit;
   const paginatedData = data.slice(start, start + limit);
-  const exportData = data.map((data) => ({
-    Company: data.companyName,
-    Commission: data.commissionPercentage + "%",
-    "Start Date": new Date(data.startDate).toLocaleDateString(),
-    "End Date": data.endDate
-      ? new Date(data.endDate).toLocaleDateString()
-      : "Active",
-    "Duration (Days)": data.durationDays,
-  }));
+
+  const exportData = data.map((item) => ({
+  Company: item.companyName,
+  Commission: item.commissionPercentage + "%",
+  "Start Date": new Date(item.startDate).toISOString().split("T")[0],
+  "End Date": item.endDate
+    ? new Date(item.endDate).toISOString().split("T")[0]
+    : "Active",
+  "Duration (Days)": item.durationDays,
+}));
+
   const columns = [
     "Company",
     "Commission",

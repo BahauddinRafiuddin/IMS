@@ -84,7 +84,7 @@ const Login = () => {
           <X />
         </Link>
 
-        <h2 className="text-2xl font-bold text-center mb-6">Welcome Back 👋</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">Welcome👋</h2>
 
         {/* EMAIL */}
         <label className="block text-sm font-medium mb-1">Email Address</label>
