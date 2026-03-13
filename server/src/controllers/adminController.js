@@ -108,9 +108,12 @@ export const getAdminDashboard = async (req, res) => {
 
 export const getAllInterns = async (req, res) => {
   try {
+
     // 1️⃣ Get all interns
-    const interns = await User.find({ role: "intern", company: req.user.company })
-      .select("name email isActive");
+    const interns = await User.find({
+      role: "intern",
+      company: req.user.company
+    }).select("name email isActive");
 
     if (!interns.length) {
       return res.status(404).json({
@@ -119,28 +122,35 @@ export const getAllInterns = async (req, res) => {
       });
     }
 
-    // 2️⃣ Get all active & upcoming programs
-    const programs = await Enrollment.find({
-      status: { $in: ["approved", "in_progress"] }
-    })
+    // 2️⃣ Get all enrollments
+    const enrollments = await Enrollment.find({})
       .populate("intern", "name email company")
-      .populate("mentor", "name email");
+      .populate("mentor", "name email")
+      .select("intern mentor status");
 
-    // 3️⃣ Map intern → mentor
-    const internMentorMap = {};
+    // 3️⃣ Map intern → mentor + enrollment status
+    const internEnrollmentMap = {};
 
-    programs.forEach(program => {
-      internMentorMap[program.intern._id.toString()] = program.mentor;
+    enrollments.forEach(enrollment => {
+      internEnrollmentMap[enrollment.intern._id.toString()] = {
+        mentor: enrollment.mentor,
+        enrollmentStatus: enrollment.status
+      };
     });
 
-    // 4️⃣ Attach mentor to intern
-    const finalInterns = interns.map(intern => ({
-      _id: intern._id,
-      name: intern.name,
-      email: intern.email,
-      isActive: intern.isActive,
-      mentor: internMentorMap[intern._id.toString()] || null
-    }));
+    // 4️⃣ Attach mentor + enrollment status
+    const finalInterns = interns.map(intern => {
+      const data = internEnrollmentMap[intern._id.toString()] || {};
+
+      return {
+        _id: intern._id,
+        name: intern.name,
+        email: intern.email,
+        isActive: intern.isActive,
+        mentor: data.mentor || null,
+        enrollmentStatus: data.enrollmentStatus || null
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -159,22 +169,52 @@ export const getAllInterns = async (req, res) => {
 
 export const getAllMentors = async (req, res) => {
   try {
-    const mentors = await User.find({ role: "mentor", company: req.user.company })
-      .select("name email");
 
-    const programs = await InternshipProgram.find({ company: req.user.company });
+    const mentors = await User.find({
+      role: "mentor",
+      company: req.user.company
+    }).select("name email");
 
-    const mentorMap = {};
+    // Get enrollments of company mentors
+    const enrollments = await Enrollment.find({})
+      .populate("mentor", "_id");
 
-    programs.forEach(program => {
-      const mentorId = program.mentor.toString();
-      mentorMap[mentorId] = (mentorMap[mentorId] || 0) + 1;
+    const mentorStats = {};
+
+    enrollments.forEach(e => {
+      const mentorId = e.mentor?._id?.toString();
+
+      if (!mentorId) return;
+
+      if (!mentorStats[mentorId]) {
+        mentorStats[mentorId] = {
+          internCount: 0,
+          activeInternships: 0,
+          completedInternships: 0
+        };
+      }
+
+      mentorStats[mentorId].internCount += 1;
+
+      if (e.status === "in_progress" || e.status === "approved") {
+        mentorStats[mentorId].activeInternships += 1;
+      }
+
+      if (e.status === "completed") {
+        mentorStats[mentorId].completedInternships += 1;
+      }
     });
 
-    const finalMentors = mentors.map(m => ({
-      ...m.toObject(),
-      internCount: mentorMap[m._id.toString()] || 0
-    }));
+    const finalMentors = mentors.map(m => {
+      const stats = mentorStats[m._id.toString()] || {};
+
+      return {
+        ...m.toObject(),
+        internCount: stats.internCount || 0,
+        activeInternships: stats.activeInternships || 0,
+        completedInternships: stats.completedInternships || 0
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -182,7 +222,7 @@ export const getAllMentors = async (req, res) => {
     });
 
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({
       success: false,
       message: "Server error while fetching mentors"
@@ -604,7 +644,7 @@ export const getAvailableInterns = async (req, res) => {
 
     // Get enrollments for active/upcoming programs
     const enrollments = await Enrollment.find({
-      status: { $in: ["approved", "in_progress"] }
+      status: { $in: ["approved", "in_progress", "completed"] }
     }).populate({
       path: "program",
       match: {
@@ -919,6 +959,7 @@ export const getCompanyReviews = async (req, res) => {
       status: "approved"
     })
       .populate("intern", "name")
+      .populate("program", "title")
       .sort({ createdAt: -1 })
 
     res.json({

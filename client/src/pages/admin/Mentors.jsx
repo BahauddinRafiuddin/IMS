@@ -129,9 +129,11 @@ const Mentors = () => {
     Name: m.name,
     Email: m.email,
     "Total Interns": m.internCount || 0,
+    "Active InternShips":m.activeInternships ||0,
+    "Completed Internships":m.completedInternships||0
   }));
 
-  const columns = ["Name", "Email", "Total Interns"];
+  const columns = ["Name", "Email", "Total Interns","Active InternShips","Completed Internships"];
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 space-y-8">
       {/* ================= CONFIRM MODAL ================= */}
@@ -274,42 +276,84 @@ const Mentors = () => {
       ) : (
         <>
           {/* ================= TABLE ================= */}
-          <div className="bg-white rounded-2xl shadow overflow-x-auto">
-            <table className="w-full min-w-150">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-left">Mentor</th>
-                  <th className="px-6 py-4 text-left">Email</th>
-                  <th className="px-6 py-4 text-center">Interns</th>
-                  <th className="px-6 py-4 text-center">Action</th>
-                </tr>
-              </thead>
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-162.5">
+                {/* HEADER */}
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Mentor
+                    </th>
 
-              <tbody>
-                {paginatedMentors.map((mentor) => (
-                  <tr key={mentor._id} className="border-t hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium">{mentor.name}</td>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Email
+                    </th>
 
-                    <td className="px-6 py-4 text-gray-600">{mentor.email}</td>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Internships
+                    </th>
 
-                    <td className="px-6 py-4 text-center font-semibold">
-                      {mentor.internCount || 0}
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                      <Trash2
-                        size={18}
-                        className="text-red-500 hover:text-red-700 cursor-pointer mx-auto"
-                        onClick={() => setDeleteMentor(mentor)}
-                      />
-                    </td>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Action
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                {/* BODY */}
+                <tbody className="divide-y">
+                  {paginatedMentors.map((mentor) => (
+                    <tr
+                      key={mentor._id}
+                      className="hover:bg-gray-50 transition"
+                    >
+                      {/* NAME */}
+                      <td className="px-4 md:px-6 py-4 font-medium text-gray-800 whitespace-nowrap">
+                        {mentor.name}
+                      </td>
+
+                      {/* EMAIL */}
+                      <td className="px-4 md:px-6 py-4 text-gray-600 whitespace-nowrap">
+                        {mentor.email}
+                      </td>
+
+                      {/* INTERNSHIP STATS */}
+                      <td className="px-4 md:px-6 py-4">
+                        <div className="flex flex-wrap justify-center gap-2">
+                          <span className="bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1 rounded-full">
+                            Total: {mentor.internCount || 0}
+                          </span>
+
+                          <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-3 py-1 rounded-full">
+                            Active: {mentor.activeInternships || 0}
+                          </span>
+
+                          <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">
+                            Completed: {mentor.completedInternships || 0}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* ACTION */}
+                      <td className="px-4 md:px-6 py-4 text-center">
+                        <button
+                          onClick={() => setDeleteMentor(mentor)}
+                          className="cursor-pointer p-2 rounded-lg hover:bg-red-50 transition"
+                        >
+                          <Trash2
+                            size={18}
+                            className="text-red-500 hover:text-red-700"
+                          />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
           {/* ================= PAGINATION ================= */}
-            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
+          <Pagination page={page} totalPages={totalPages} setPage={setPage} />
         </>
       )}
     </div>

@@ -123,9 +123,7 @@ const Interns = () => {
     Name: i.name,
     Email: i.email,
     Status: i.isActive ? "Active" : "Inactive",
-    Mentor:
-      i.mentor?.name ||
-      "Not assigned",
+    Mentor: i.mentor?.name || "Not assigned",
   }));
 
   const columns = ["Name", "Email", "Status", "Mentor"];
@@ -262,76 +260,129 @@ const Interns = () => {
       ) : (
         <>
           {/* ================= TABLE ================= */}
-          <div className="bg-white rounded-2xl shadow overflow-x-auto">
-            <table className="w-full min-w-175">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    Intern
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    Mentor
-                  </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold">
-                    Action
-                  </th>
-                </tr>
-              </thead>
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-225">
+                {/* HEADER */}
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Intern
+                    </th>
 
-              <tbody>
-                {paginatedInterns.map((intern) => (
-                  <tr
-                    key={intern._id}
-                    className="border-t hover:bg-gray-50 transition"
-                  >
-                    <td className="px-6 py-4 font-medium">{intern.name}</td>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Email
+                    </th>
 
-                    <td className="px-6 py-4 text-gray-600">{intern.email}</td>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Status
+                    </th>
 
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          intern.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {intern.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Mentor
+                    </th>
 
-                    <td className="px-6 py-4">
-                      {intern.mentor?.name || (
-                        <span className="text-gray-400">Not assigned</span>
-                      )}
-                    </td>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Internship Status
+                    </th>
 
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setToggleStatus(intern)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer
-                ${
-                  intern.isActive
-                    ? "bg-red-600 hover:bg-red-700 text-white"
-                    : "bg-green-600 hover:bg-green-700 text-white"
-                }`}
-                      >
-                        {intern.isActive ? "Deactivate" : "Activate"}
-                      </button>
-                    </td>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Action
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                {/* BODY */}
+                <tbody className="divide-y">
+                  {paginatedInterns.map((intern) => (
+                    <tr
+                      key={intern._id}
+                      className="hover:bg-gray-50 transition"
+                    >
+                      {/* INTERN NAME */}
+                      <td className="px-4 md:px-6 py-4 font-medium text-gray-800 whitespace-nowrap">
+                        {intern.name}
+                      </td>
+
+                      {/* EMAIL */}
+                      <td className="px-4 md:px-6 py-4 text-gray-600 whitespace-nowrap">
+                        {intern.email}
+                      </td>
+
+                      {/* ACTIVE STATUS */}
+                      <td className="px-4 md:px-6 py-4 text-center">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            intern.isActive
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {intern.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+
+                      {/* MENTOR */}
+                      <td className="px-4 md:px-6 py-4 text-gray-700 whitespace-nowrap">
+                        {intern.mentor?.name || (
+                          <span className="text-gray-400">Not assigned</span>
+                        )}
+                      </td>
+
+                      {/* INTERNSHIP STATUS */}
+                      <td className="px-4 md:px-6 py-4">
+                        {intern.enrollmentStatus === "approved" && (
+                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+                            Starting Soon
+                          </span>
+                        )}
+
+                        {intern.enrollmentStatus === "in_progress" && (
+                          <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
+                            In Progress
+                          </span>
+                        )}
+
+                        {intern.enrollmentStatus === "completed" && (
+                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                            Completed
+                          </span>
+                        )}
+
+                        {intern.enrollmentStatus === "cancelled" && (
+                          <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">
+                            Cancelled
+                          </span>
+                        )}
+
+                        {!intern.enrollmentStatus && (
+                          <span className="text-gray-400 text-sm">
+                            Not enrolled
+                          </span>
+                        )}
+                      </td>
+
+                      {/* ACTION */}
+                      <td className="px-4 md:px-6 py-4 text-center">
+                        <button
+                          onClick={() => setToggleStatus(intern)}
+                          className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition ${
+                            intern.isActive
+                              ? "bg-red-600 hover:bg-red-700 text-white"
+                              : "bg-green-600 hover:bg-green-700 text-white"
+                          }`}
+                        >
+                          {intern.isActive ? "Deactivate" : "Activate"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
           {/* ================= PAGINATION ================= */}
-            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
+          <Pagination page={page} totalPages={totalPages} setPage={setPage} />
         </>
       )}
 

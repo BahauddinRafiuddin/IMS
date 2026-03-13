@@ -441,7 +441,7 @@ export const getMentorPrograms = async (req, res) => {
         const enrollments = await Enrollment.find({
           program: program._id,
           mentor: mentorId,
-          // status: "in_progress"
+          status: "in_progress"
         }).populate("intern", "name email");
 
         return {
@@ -474,39 +474,55 @@ export const getMentorTasks = async (req, res) => {
       });
     }
 
-    const mentorTasks = await Task.find({ mentor: mentorId }).populate("assignedIntern", "name email")
-    if (!mentorTasks.length) {
-      return res.status(404).json({ success: false, message: "No tasks Found" })
+    const mentorTasks = await Task.find({ mentor: mentorId })
+      .populate("assignedIntern", "name email")
+      .populate({
+        path: "enrollment",
+        match: { status: { $ne: "completed" } },
+        select: "status"
+      });
+
+    // remove tasks with completed enrollment
+    const filteredTasks = mentorTasks.filter(t => t.enrollment);
+
+    if (!filteredTasks.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No tasks Found"
+      });
     }
-    const totalTasks = mentorTasks.length
-    const pendingReviews = mentorTasks.filter(
+
+    const totalTasks = filteredTasks.length;
+
+    const pendingReviews = filteredTasks.filter(
       t => t.reviewStatus === "pending" && t.status === "submitted"
     ).length;
 
-    const approvedTasks = mentorTasks.filter(
+    const approvedTasks = filteredTasks.filter(
       t => t.status === "approved"
     ).length;
 
-    const rejectedTasks = mentorTasks.filter(
+    const rejectedTasks = filteredTasks.filter(
       t => t.status === "rejected"
     ).length;
 
-    const lateSubmissions = mentorTasks.filter(
-      (t) => t.isLate === true
+    const lateSubmissions = filteredTasks.filter(
+      t => t.isLate === true
     ).length;
-
 
     return res.status(200).json({
       success: true,
       message: "tasks found successfully",
-      mentorTasks: mentorTasks,
+      mentorTasks: filteredTasks,
       stats: {
         totalTasks,
         pendingReviews,
         rejectedTasks,
-        lateSubmissions, approvedTasks
+        lateSubmissions,
+        approvedTasks
       }
-    })
+    });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -514,7 +530,7 @@ export const getMentorTasks = async (req, res) => {
       message: "Server error while fetching mentor tasks"
     });
   }
-}
+};
 
 export const getInternPerformance = async (req, res) => {
   try {

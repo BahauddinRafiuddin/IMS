@@ -57,3 +57,8 @@ export const createReview = async (reviewData) => {
   const res = await api.post('/intern/review', reviewData)
   return res.data
 }
+
+export const getMyReview = async () => {
+  const res = await api.get('/intern/review')
+  return res.data
+}

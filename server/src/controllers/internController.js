@@ -376,3 +376,24 @@ export const createReview = async (req, res) => {
     });
   }
 }
+
+export const getMyReview = async (req, res) => {
+  try {
+    const review = await Review.findOne({
+      company: req.user.company,
+      intern:req.user.id
+    })
+      .populate("intern", "name")
+      .populate("program", "title")
+      .sort({ createdAt: -1 })
+
+    res.json({
+      success: true,
+      review
+    })
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    })
+  }
+}
