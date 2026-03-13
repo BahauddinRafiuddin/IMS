@@ -23,16 +23,9 @@ const Landing = () => {
           <div className="hidden md:flex space-x-4">
             <Link
               to="/login"
-              className="px-5 py-2 rounded-lg border border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white transition"
-            >
-              Login
-            </Link>
-
-            <Link
-              to="/register"
               className="px-5 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
             >
-              Register
+              Login
             </Link>
           </div>
 
@@ -80,7 +73,7 @@ const Landing = () => {
 
           <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:justify-center md:justify-start">
             <Link
-              to="/register"
+              to="/login"
               className="px-7 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center"
             >
               Get Started
