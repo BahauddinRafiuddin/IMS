@@ -7,7 +7,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-
+import Loading from '../../components/common/Loading'
 import StatCard from "../../components/ui/StatCard";
 import { getMenorDashboard } from "../../api/mentor.api";
 
@@ -37,9 +37,7 @@ const MentorDashboard = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-20 text-gray-500">
-        Loading mentor dashboard...
-      </div>
+     <Loading/>
     );
   }
 

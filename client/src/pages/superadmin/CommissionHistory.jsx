@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { getAllCompaniesCommissionHistory } from "../../api/superAdmin.api";
 import { toastError } from "../../utils/toast";
-
 const CommissionHistory = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +21,7 @@ const CommissionHistory = () => {
   useEffect(() => {
     fetchHistory();
   }, []);
-
+  
   return (
     <div className="space-y-6">
       {/* HEADER */}

@@ -8,6 +8,7 @@ import {
   Clock,
   Star,
 } from "lucide-react";
+import Loading from "../../components/common/Loading";
 
 const InternPerformance = () => {
   const [loading, setLoading] = useState(true);
@@ -30,9 +31,7 @@ const InternPerformance = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-20 text-gray-500">
-        Loading intern performance...
-      </div>
+      <Loading/>
     );
   }
 

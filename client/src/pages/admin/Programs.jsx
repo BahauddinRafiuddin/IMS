@@ -1,18 +1,30 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable no-unused-vars */
 import { useEffect, useState, useMemo } from "react";
 import { getAllPrograms, changeProgramStatus } from "../../api/program.api";
-import { SearchX } from "lucide-react";
+import { 
+  SearchX, 
+  Plus, 
+  Search, 
+  Calendar, 
+  Clock, 
+  User as UserIcon, 
+  Briefcase, 
+  Tag, 
+  CheckCircle2, 
+  Edit3, 
+  UserPlus,
+  Layers
+} from "lucide-react";
 
 import ProgramStatusBadge from "../../components/program/ProgramStatusBadge";
 import EnrollInternModal from "../../components/program/EnrollInternModal";
 import CreateProgramModal from "../../components/program/CreateProgramModal";
 import UpdateProgramModal from "../../components/program/UpdateProgramModal";
-
 import { toastError, toastSuccess } from "../../utils/toast";
 import ConfirmModal from "../../components/common/ConfirmModal";
-
 import Pagination from "../../components/common/Pagination";
 import TableExportButtons from "../../components/common/TableExportButtons";
+import Loading from "../../components/common/Loading";
 
 const Programs = () => {
   const [confirmData, setConfirmData] = useState(null);
@@ -21,37 +33,31 @@ const Programs = () => {
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editProgram, setEditProgram] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // pagination
   const [page, setPage] = useState(1);
-  const ITEMS_PER_PAGE = 1;
+  const ITEMS_PER_PAGE = 6; // Increased for better view
 
-  // ================= FETCH =================
   const fetchPrograms = async () => {
     try {
+      setLoading(true);
       const res = await getAllPrograms();
       setPrograms(res.programs);
     } catch (err) {
-      toastError(err.response?.data?.message);
+      toastError(err.response?.data?.message || "Failed to load programs");
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchPrograms();
-  }, []);
+  useEffect(() => { fetchPrograms(); }, []);
 
-  // ================= STATUS CHANGE =================
   const handleStatusChange = async (program) => {
-    let nextStatus = "active";
-
-    if (program.status === "upcoming") nextStatus = "active";
-    else if (program.status === "active") nextStatus = "completed";
-
+    let nextStatus = program.status === "upcoming" ? "active" : "completed";
     if (nextStatus === "completed" && program.totalTasks < 10) {
       toastError("Program must have at least 10 tasks before completing.");
       return;
     }
-
     try {
       await changeProgramStatus(program._id, nextStatus);
       toastSuccess(`Program marked as ${nextStatus}`);
@@ -61,271 +67,194 @@ const Programs = () => {
     }
   };
 
-  // ================= SEARCH =================
   const filteredPrograms = useMemo(() => {
-    if (!search.trim()) return programs;
-
-    const value = search.trim().toLowerCase();
-
-    return programs.filter(
-      (p) =>
-        p.title.toLowerCase().includes(value) ||
-        p.domain.toLowerCase().includes(value) ||
-        p.mentor?.name?.toLowerCase().includes(value) ||
-        p.status.toLowerCase().includes(value),
+    const val = search.trim().toLowerCase();
+    if (!val) return programs;
+    return programs.filter(p => 
+      [p.title, p.domain, p.mentor?.name, p.status].some(s => s?.toLowerCase().includes(val))
     );
   }, [search, programs]);
 
-  // ================= PAGINATION =================
   const totalPages = Math.ceil(filteredPrograms.length / ITEMS_PER_PAGE);
-
   const paginatedPrograms = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
     return filteredPrograms.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredPrograms, page]);
 
-  // ================= EXPORT DATA =================
-  const exportData = useMemo(() => {
-    return filteredPrograms.map((p) => ({
-      Title: p.title,
-      Domain: p.domain,
-      Mentor: p.mentor?.name || "-",
-      Duration: `${p.durationInWeeks} weeks`,
-      Status: p.status,
-      Type: p.type,
-      Price: p.type === "free" ? "Free" : `₹${p.price}`,
-      StartDate: new Date(p.startDate).toDateString(),
-      EndDate: new Date(p.endDate).toDateString(),
-    }));
-  }, [filteredPrograms]);
+  const exportData = useMemo(() => filteredPrograms.map(p => ({
+    Title: p.title, Domain: p.domain, Mentor: p.mentor?.name || "-",
+    Status: p.status, Price: p.type === "free" ? "Free" : `₹${p.price}`,
+    Date: `${new Date(p.startDate).toLocaleDateString()} - ${new Date(p.endDate).toLocaleDateString()}`
+  })), [filteredPrograms]);
 
-  const columns = [
-    "Title",
-    "Domain",
-    "Mentor",
-    "Duration",
-    "Status",
-    "Type",
-    "Price",
-    "StartDate",
-    "EndDate",
-  ];
+  if (loading) return <Loading />;
 
   return (
-    <div className="space-y-8">
-      {/* ================= MODALS ================= */}
-      {showCreate && (
-        <CreateProgramModal
-          onClose={() => setShowCreate(false)}
-          refresh={fetchPrograms}
-        />
-      )}
-
-      {selectedProgram && (
-        <EnrollInternModal
-          program={selectedProgram}
-          onClose={() => setSelectedProgram(null)}
-          refresh={fetchPrograms}
-        />
-      )}
-
-      {editProgram && (
-        <UpdateProgramModal
-          program={editProgram}
-          onClose={() => setEditProgram(null)}
-          refresh={fetchPrograms}
-        />
-      )}
-
+    <div className="max-w-7xl mx-auto space-y-8 pb-10">
+      {/* MODALS */}
+      {showCreate && <CreateProgramModal onClose={() => setShowCreate(false)} refresh={fetchPrograms} />}
+      {selectedProgram && <EnrollInternModal program={selectedProgram} onClose={() => setSelectedProgram(null)} refresh={fetchPrograms} />}
+      {editProgram && <UpdateProgramModal program={editProgram} onClose={() => setEditProgram(null)} refresh={fetchPrograms} />}
       {confirmData && (
-        <ConfirmModal
-          title="Confirm Program Status"
-          message={`Are you sure you want to mark "${confirmData.program.title}" as "${confirmData.nextStatus}"?`}
-          onCancel={() => setConfirmData(null)}
-          onConfirm={() => {
-            handleStatusChange(confirmData.program);
-            setConfirmData(null);
-          }}
+        <ConfirmModal 
+          title="Update Status" 
+          message={`Transition "${confirmData.program.title}" to ${confirmData.nextStatus.toUpperCase()}?`}
+          onConfirm={() => { handleStatusChange(confirmData.program); setConfirmData(null); }}
+          onCancel={() => setConfirmData(null)} 
         />
       )}
 
-      {/* ================= HEADER ================= */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      {/* HEADER AREA */}
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-b border-slate-200 pb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Internship Programs
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Manage internship lifecycle and interns
-          </p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Internship Programs</h1>
+          <p className="text-slate-500 mt-1">Curate and oversee the educational journey of your interns.</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search by title, domain, mentor or status..."
-            className="w-full sm:w-80 px-4 py-2 rounded-xl border focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-
-          {/* EXPORT BUTTONS */}
-          <TableExportButtons
-            data={exportData}
-            columns={columns}
-            fileName="programs"
-          />
-
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative group flex-1 min-w-75">
+            <Search className="absolute left-3 top-3 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Search programs, domains, or mentors..."
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+            />
+          </div>
+          <TableExportButtons data={exportData} columns={["Title", "Domain", "Mentor", "Status", "Price", "Date"]} fileName="programs-list" />
           <button
             onClick={() => setShowCreate(true)}
-            className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium shadow cursor-pointer"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-100 active:scale-95 cursor-pointer"
           >
-            + Create Program
+            <Plus size={20} />
+            <span>Create</span>
           </button>
         </div>
       </div>
 
-      {/* ================= EMPTY ================= */}
+      {/* PROGRAMS LIST */}
       {paginatedPrograms.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow p-14 flex flex-col items-center text-center space-y-4">
-          <SearchX className="w-20 h-20 text-blue-500 opacity-70" />
-
-          <h2 className="text-xl font-semibold text-gray-800">
-            No programs found
-          </h2>
-
-          <p className="text-gray-500 max-w-md">
-            Try adjusting your search or clear the filter.
-          </p>
-
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg cursor-pointer"
-            >
-              Clear Search
-            </button>
-          )}
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
+          <SearchX size={60} className="text-slate-200 mb-4" />
+          <h3 className="text-lg font-bold text-slate-800">No programs found</h3>
+          <p className="text-slate-500 text-sm mb-6">Try adjusting your search filters.</p>
+          {search && <button onClick={() => setSearch("")} className="text-indigo-600 font-bold hover:underline">Clear Search</button>}
         </div>
       ) : (
-        <>
-          <div className="space-y-4">
-            {paginatedPrograms.map((program) => (
-              <div
-                key={program._id}
-                className="bg-white rounded-2xl shadow-sm border p-6 hover:shadow-md transition"
-              >
-                <div className="flex flex-col xl:flex-row xl:justify-between gap-6">
-                  {/* LEFT */}
-                  <div className="space-y-3 flex-1">
-                    <div className="flex justify-between">
-                      <h2 className="text-lg font-semibold text-gray-900">
+        <div className="grid grid-cols-1 gap-4">
+          {paginatedPrograms.map((program) => (
+            <div key={program._id} className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-xl hover:border-indigo-200 transition-all duration-300">
+              {/* Status Side Accent */}
+              <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                program.status === 'active' ? 'bg-emerald-500' : 
+                program.status === 'upcoming' ? 'bg-amber-500' : 'bg-slate-400'
+              }`} />
+
+              <div className="p-6 flex flex-col lg:flex-row gap-6">
+                {/* Main Content */}
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
                         {program.title}
                       </h2>
-
-                      <ProgramStatusBadge status={program.status} />
-                    </div>
-
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {program.description}
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700 mt-3">
-                      <div>
-                        📘 <b>Domain:</b> {program.domain}
-                      </div>
-
-                      <div>
-                        👨‍🏫 <b>Mentor:</b> {program.mentor?.name || "—"}
-                      </div>
-
-                      <div>
-                        ⏳ <b>Duration:</b> {program.durationInWeeks} weeks
-                      </div>
-
-                      <div>
-                        📅 <b>Dates:</b>{" "}
-                        {new Date(program.startDate).toDateString()} —{" "}
-                        {new Date(program.endDate).toDateString()}
-                      </div>
-
-                      <div>
-                        📌 <b>Minimum Tasks:</b> {program.minimumTasksRequired}
-                      </div>
-
-                      <div>
-                        💼 <b>Type:</b>{" "}
-                        <span className="capitalize font-medium">
+                      <div className="flex items-center gap-2 mt-1">
+                        <ProgramStatusBadge status={program.status} />
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${program.type === 'paid' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-slate-100 text-slate-600'}`}>
                           {program.type}
                         </span>
                       </div>
-
-                      <div>
-                        💰 <b>Price:</b>{" "}
-                        {program.type === "free" ? "Free" : `₹${program.price}`}
-                      </div>
-
-                      <div>
-                        🟢 <b>Active:</b> {program.isActive ? "Yes" : "No"}
-                      </div>
                     </div>
                   </div>
 
-                  {/* ACTIONS */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    {program.status === "upcoming" && (
-                      <button
-                        onClick={() => setSelectedProgram(program)}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg cursor-pointer"
-                      >
-                        Enroll
-                      </button>
-                    )}
+                  <p className="text-sm text-slate-500 leading-relaxed line-clamp-2 italic">
+                    {program.description || "No description provided for this internship program."}
+                  </p>
 
-                    {program.status !== "completed" && (
-                      <button
-                        onClick={() =>
-                          setConfirmData({
-                            program,
-                            nextStatus:
-                              program.status === "upcoming"
-                                ? "active"
-                                : "completed",
-                          })
-                        }
-                        className={`px-4 py-2 rounded-lg text-white ${
-                          program.status === "upcoming"
-                            ? "bg-blue-600"
-                            : "bg-green-600"
-                        }`}
-                      >
-                        {program.status === "upcoming"
-                          ? "Activate"
-                          : "Complete"}
-                      </button>
-                    )}
-
-                    {program.status !== "completed" && (
-                      <button
-                        onClick={() => setEditProgram(program)}
-                        className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                    )}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                    <InfoItem icon={Layers} label="Domain" value={program.domain} />
+                    <InfoItem icon={UserIcon} label="Mentor" value={program.mentor?.name} />
+                    <InfoItem icon={Clock} label="Duration" value={`${program.durationInWeeks} Weeks`} />
+                    <InfoItem icon={Tag} label="Price" value={program.type === 'free' ? 'Free' : `₹${program.price}`} />
+                  </div>
+                  
+                  <div className="flex items-center gap-6 pt-2 border-t border-slate-50">
+                     <div className="flex items-center gap-2">
+                        <Calendar size={14} className="text-slate-400" />
+                        <span className="text-xs font-semibold text-slate-500">
+                          {new Date(program.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} — {new Date(program.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-slate-400" />
+                        <span className="text-xs font-semibold text-slate-500">Min. Tasks: {program.minimumTasksRequired}</span>
+                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
 
-          {/* PAGINATION RIGHT SIDE */}
-          <Pagination page={page} totalPages={totalPages} setPage={setPage} />
-        </>
+                {/* Vertical Divider (Desktop Only) */}
+                <div className="hidden lg:block w-px bg-slate-100" />
+
+                {/* Actions Section */}
+                <div className="flex flex-row lg:flex-col justify-center gap-3 shrink-0">
+                  {program.status === "upcoming" && (
+                    <ActionButton onClick={() => setSelectedProgram(program)} icon={UserPlus} label="Enroll" variant="indigo" />
+                  )}
+                  {program.status !== "completed" && (
+                    <>
+                      <ActionButton 
+                        onClick={() => setConfirmData({ 
+                          program, 
+                          nextStatus: program.status === "upcoming" ? "active" : "completed" 
+                        })} 
+                        icon={CheckCircle2} 
+                        label={program.status === "upcoming" ? "Activate" : "Complete"} 
+                        variant={program.status === "upcoming" ? "blue" : "emerald"} 
+                      />
+                      <ActionButton onClick={() => setEditProgram(program)} icon={Edit3} label="Edit" variant="amber" />
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
+
+      <div className="flex justify-center pt-6">
+        <Pagination page={page} totalPages={totalPages} setPage={setPage} />
+      </div>
     </div>
+  );
+};
+
+// Sub-components for cleaner code
+const InfoItem = ({ icon: Icon, label, value }) => (
+  <div className="space-y-1">
+    <div className="flex items-center gap-1.5 text-slate-400">
+      <Icon size={14} />
+      <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
+    </div>
+    <p className="text-sm font-bold text-slate-700 truncate">{value || "—"}</p>
+  </div>
+);
+
+const ActionButton = ({ onClick, icon: Icon, label, variant }) => {
+  const styles = {
+    indigo: "bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white border-indigo-100",
+    blue: "bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border-blue-100",
+    emerald: "bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border-emerald-100",
+    amber: "bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border-amber-100",
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border transition-all duration-200 active:scale-95 cursor-pointer w-full lg:min-w-30 ${styles[variant]}`}
+    >
+      <Icon size={16} />
+      {label}
+    </button>
   );
 };
 

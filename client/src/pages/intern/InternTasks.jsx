@@ -11,6 +11,7 @@ import {
 import SubmitTaskModal from "../../components/intern/SubmitTaskModal";
 import { submitTask } from "../../api/intern.api";
 import { toastSuccess, toastError } from "../../utils/toast";
+import Loading from "../../components/common/Loading";
 
 const priorityColors = {
   low: "bg-green-100 text-green-700",
@@ -63,9 +64,7 @@ const InternTasks = () => {
 
   // console.log("task", tasks);
   if (loading)
-    return (
-      <div className="text-center py-20 text-gray-500">Loading tasks...</div>
-    );
+    return <Loading/>
 
   if (!tasks.length)
     return (

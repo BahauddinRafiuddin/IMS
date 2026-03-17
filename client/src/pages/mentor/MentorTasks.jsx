@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import ReviewTaskModal from "../../components/mentor/ReviewTaskModal";
 import CreateTaskModal from "../../components/mentor/CreateTaskModal";
+import Loading from "../../components/common/Loading";
 
 const priorityColors = {
   low: "bg-green-100 text-green-700",
@@ -64,12 +65,7 @@ const MentorTasks = () => {
     fetchTasks();
   }, [showCreateModal]);
 
-  if (loading)
-    return (
-      <div className="text-center py-20 text-gray-500">
-        Loading mentor tasks...
-      </div>
-    );
+  if (loading) return <Loading />;
   return (
     <div className="space-y-10">
       {/* ================= HEADER ================= */}
@@ -180,7 +176,7 @@ const MentorTasks = () => {
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[task.status]}`}
                   >
-                  Task Status - {task.status}
+                    Task Status - {task.status}
                   </span>
                 </div>
               </div>

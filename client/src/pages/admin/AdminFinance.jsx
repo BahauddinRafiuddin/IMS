@@ -6,11 +6,17 @@ import {
   Wallet,
   Repeat,
   Download,
+  Filter,
+  Calendar,
+  Percent,
+  History,
+  PieChart,
 } from "lucide-react";
 import { getAdminFinanceOverview } from "../../api/admin.api";
 import StatCard from "../../components/ui/StatCard";
 import * as XLSX from "xlsx";
 import { toastError } from "../../utils/toast";
+import Loading from "../../components/common/Loading";
 
 const AdminFinance = () => {
   const [data, setData] = useState(null);
@@ -43,281 +49,321 @@ const AdminFinance = () => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  const applyFilters = () => {
-    fetchFinance();
-  };
+  const applyFilters = () => fetchFinance();
 
   const resetFilters = () => {
-    setFilters({
-      commission: "",
-      startDate: "",
-      endDate: "",
-    });
+    setFilters({ commission: "", startDate: "", endDate: "" });
   };
 
   const downloadExcel = () => {
-    if (!transactions.length) {
-      return toastError("No data to export");
-    }
+    if (!transactions.length) return toastError("No data to export");
     const sheetData = data.transactions.map((txn) => ({
       Intern: txn.intern?.name,
-      Email: txn.intern?.email,
       Program: txn.program?.title,
       Amount: txn.totalAmount,
       Commission: txn.superAdminCommission,
-      CommissionPercentage: txn.commissionPercentage,
-      CompanyEarning: txn.companyEarning,
+      "Commission %": txn.commissionPercentage,
+      "Company Earning": txn.companyEarning,
       Method: txn.paymentMethod,
       Date: new Date(txn.createdAt).toLocaleDateString(),
     }));
-
     const worksheet = XLSX.utils.json_to_sheet(sheetData);
     const workbook = XLSX.utils.book_new();
-
     XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
-
-    XLSX.writeFile(workbook, "Company_Transactions.xlsx");
+    XLSX.writeFile(
+      workbook,
+      `Finance_Report_${new Date().toLocaleDateString()}.xlsx`,
+    );
   };
 
   if (loading) {
-    return <div className="p-6 text-gray-500">Loading financial data...</div>;
+    return <Loading />;
   }
-  if (!data) {
-    return (
-      <div className="py-20 text-center text-red-500">
-        Failed to load dashboard
-      </div>
-    )
-  }
+
   const { summary, transactions, commissionBreakdown } = data;
 
   return (
-    <div className="space-y-8">
-      {/* HEADER */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
+    <div className="max-w-7xl mx-auto space-y-8 pb-10">
+      {/* 1. HEADER & EXPORT */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-            Financial Overview
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Finance Overview
           </h1>
-          <p className="text-gray-500 mt-1">
-            View earnings and transaction details
+          <p className="text-slate-500 mt-1">
+            Real-time revenue tracking and commission distribution.
           </p>
         </div>
-
         <button
           onClick={downloadExcel}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer"
+          className="flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
         >
-          <Download size={18} />
-          Download Excel
+          <Download size={18} className="text-indigo-600" />
+          Export Report
         </button>
       </div>
 
-      {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      {/* 2. KEY STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Revenue"
-          value={`₹${summary.totalRevenue}`}
+          title="Gross Revenue"
+          value={`₹${summary.totalRevenue.toLocaleString()}`}
           icon={IndianRupee}
-          color="bg-blue-600"
-        />
-
-        <StatCard
-          title="Platform Commission"
-          value={`₹${summary.totalCommission}`}
-          icon={TrendingUp}
           color="bg-indigo-600"
         />
-
         <StatCard
-          title="Company Earnings"
-          value={`₹${summary.totalCompanyEarning}`}
-          icon={Wallet}
-          color="bg-green-600"
+          title="Platform Fees"
+          value={`₹${summary.totalCommission.toLocaleString()}`}
+          icon={TrendingUp}
+          color="bg-violet-600"
         />
-
         <StatCard
-          title="Total Transactions"
+          title="Company Net"
+          value={`₹${summary.totalCompanyEarning.toLocaleString()}`}
+          icon={Wallet}
+          color="bg-emerald-600"
+        />
+        <StatCard
+          title="Volume"
           value={summary.totalTransactions}
           icon={Repeat}
-          color="bg-gray-700"
+          color="bg-slate-800"
         />
       </div>
 
-      {/* FILTERS */}
-      <div className="bg-white border rounded-2xl shadow-sm p-6">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-          {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-            {/* Commission */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">
-                Commission %
-              </label>
-              <input
-                type="number"
-                name="commission"
-                value={filters.commission}
-                onChange={handleFilterChange}
-                placeholder="e.g. 10"
-                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* 3. FILTERS (LEFT/TOP) */}
+        <div className="xl:col-span-1 space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center gap-2 mb-6 text-slate-800 font-bold">
+              <Filter size={18} className="text-indigo-600" />
+              <h3>Refine Results</h3>
             </div>
 
-            {/* Start Date */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">
-                Start Date
-              </label>
-              <input
-                type="date"
-                name="startDate"
-                value={filters.startDate}
-                onChange={handleFilterChange}
-                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Commission %
+                </label>
+                <div className="relative">
+                  <Percent
+                    size={14}
+                    className="absolute left-3 top-3 text-slate-400"
+                  />
+                  <input
+                    type="number"
+                    name="commission"
+                    value={filters.commission}
+                    onChange={handleFilterChange}
+                    placeholder="Filter by rate..."
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Start Date
+                </label>
+                <div className="relative">
+                  <Calendar
+                    size={14}
+                    className="absolute left-3 top-3 text-slate-400"
+                  />
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={filters.startDate}
+                    onChange={handleFilterChange}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  End Date
+                </label>
+                <div className="relative">
+                  <Calendar
+                    size={14}
+                    className="absolute left-3 top-3 text-slate-400"
+                  />
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={filters.endDate}
+                    onChange={handleFilterChange}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* End Date */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">
-                End Date
-              </label>
-              <input
-                type="date"
-                name="endDate"
-                value={filters.endDate}
-                onChange={handleFilterChange}
-                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
+            <div className="grid grid-cols-2 gap-3 mt-8">
+              <button
+                onClick={applyFilters}
+                className="bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-100 cursor-pointer"
+              >
+                Apply
+              </button>
+              <button
+                onClick={resetFilters}
+                className="bg-slate-100 text-slate-600 py-2 rounded-lg font-bold hover:bg-slate-200 transition cursor-pointer"
+              >
+                Reset
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={applyFilters}
-              className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition cursor-pointer"
-            >
-              Apply Filters
-            </button>
+        {/* 4. COMMISSION BREAKDOWN (RIGHT) */}
+        <div className="xl:col-span-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+              <div className="flex items-center gap-2 font-bold text-slate-800">
+                <PieChart size={18} className="text-indigo-600" />
+                <h3>Commission Breakdown</h3>
+              </div>
+              <button
+                onClick={() => setShowBreakdown(!showBreakdown)}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition uppercase tracking-tighter cursor-pointer"
+              >
+                {showBreakdown ? "[ Collapse ]" : "[ Expand View ]"}
+              </button>
+            </div>
 
-            <button
-              onClick={resetFilters}
-              className="bg-gray-100 text-gray-700 px-5 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition cursor-pointer"
-            >
-              Reset
-            </button>
+            {showBreakdown ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50/50 text-slate-500 border-b">
+                    <tr>
+                      <th className="px-6 py-4 text-left font-bold">Rate</th>
+                      <th className="px-6 py-4 text-left font-bold">Revenue</th>
+                      <th className="px-6 py-4 text-left font-bold">
+                        Platform Fees
+                      </th>
+                      <th className="px-6 py-4 text-left font-bold">
+                        Net Earning
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {commissionBreakdown.map((b) => (
+                      <tr
+                        key={b._id}
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">
+                            {b._id}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 font-medium text-slate-700">
+                          ₹{b.totalRevenue.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 text-indigo-600 font-semibold">
+                          ₹{b.totalCommission.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 text-emerald-600 font-bold">
+                          ₹{b.totalEarning.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-slate-400 text-sm italic">
+                Click expand to view revenue distribution by percentage.
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* COMMISSION BREAKDOWN */}
-      <div className="bg-white rounded-xl shadow-sm border">
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="font-semibold text-gray-700">Commission Breakdown</h2>
-
-          <button
-            onClick={() => setShowBreakdown(!showBreakdown)}
-            className="text-sm bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 transition cursor-pointer"
-          >
-            {showBreakdown ? "Hide" : "View"}
-          </button>
+      {/* 5. RECENT TRANSACTIONS */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-2">
+          <History size={18} className="text-indigo-600" />
+          <h2 className="text-lg font-bold text-slate-800">
+            Recent Transactions
+          </h2>
         </div>
 
-        {/* Collapsible Content */}
-        {showBreakdown && (
-          <div className="p-4 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left">Commission %</th>
-                  <th className="px-4 py-3 text-left">Revenue</th>
-                  <th className="px-4 py-3 text-left">Platform Commission</th>
-                  <th className="px-4 py-3 text-left">Total Earning </th>
-                  <th className="px-4 py-3 text-left">Transactions</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y">
-                {commissionBreakdown.map((b) => (
-                  <tr key={b._id}>
-                    <td className="px-4 py-3">{b._id}%</td>
-                    <td className="px-4 py-3">₹{b.totalRevenue}</td>
-                    <td className="px-4 py-3 text-indigo-600">
-                      ₹{b.totalCommission}
-                    </td>
-                    <td className="px-4 py-3 text-green-600 font-semibold">
-                      ₹{b.totalEarning}
-                    </td>
-                    <td className="px-4 py-3">{b.totalTransactions}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* TRANSACTION TABLE */}
-      <div className="bg-white rounded-2xl shadow-sm border p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          Transactions
-        </h2>
-
-        {transactions.length === 0 ? (
-          <p className="text-gray-500 text-sm">No transactions found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="text-left px-4 py-3">Intern</th>
-                  <th className="text-left px-4 py-3">Program</th>
-                  <th className="text-left px-4 py-3">Amount</th>
-                  <th className="text-left px-4 py-3">Commission</th>
-                  <th className="text-left px-4 py-3">%</th>
-                  <th className="text-left px-4 py-3">Earning</th>
-                  <th className="text-left px-4 py-3">Method</th>
-                  <th className="text-left px-4 py-3">Date</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y">
-                {transactions.map((txn) => (
-                  <tr key={txn._id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-500">
+              <tr>
+                <th className="text-left px-6 py-4 font-bold uppercase tracking-wider text-[10px]">
+                  Intern / Program
+                </th>
+                <th className="text-left px-6 py-4 font-bold uppercase tracking-wider text-[10px]">
+                  Amount
+                </th>
+                <th className="text-left px-6 py-4 font-bold uppercase tracking-wider text-[10px]">
+                  Distribution
+                </th>
+                <th className="text-left px-6 py-4 font-bold uppercase tracking-wider text-[10px]">
+                  Net Earning
+                </th>
+                <th className="text-left px-6 py-4 font-bold uppercase tracking-wider text-[10px]">
+                  Method
+                </th>
+                <th className="text-left px-6 py-4 font-bold uppercase tracking-wider text-[10px]">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {transactions.map((txn) => (
+                <tr
+                  key={txn._id}
+                  className="hover:bg-slate-50/80 transition-colors group"
+                >
+                  <td className="px-6 py-4">
+                    <div className="font-bold text-slate-800">
                       {txn.intern?.name}
-                    </td>
-
-                    <td className="px-4 py-3">{txn.program?.title}</td>
-
-                    <td className="px-4 py-3 text-blue-600 font-semibold">
-                      ₹{txn.totalAmount}
-                    </td>
-
-                    <td className="px-4 py-3 text-indigo-600">
-                      ₹{txn.superAdminCommission}
-                    </td>
-
-                    <td className="px-4 py-3">{txn.commissionPercentage}%</td>
-
-                    <td className="px-4 py-3 text-green-600 font-semibold">
-                      ₹{txn.companyEarning}
-                    </td>
-
-                    <td className="px-4 py-3">{txn.paymentMethod}</td>
-
-                    <td className="px-4 py-3 text-gray-500">
-                      {new Date(txn.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {txn.program?.title}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 font-bold text-slate-900">
+                    ₹{txn.totalAmount.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-indigo-600 font-semibold text-xs">
+                      Fees: ₹{txn.superAdminCommission}
+                    </div>
+                    <div className="text-slate-400 text-[10px]">
+                      Rate: {txn.commissionPercentage}%
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">
+                      ₹{txn.companyEarning.toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="capitalize px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">
+                      {txn.paymentMethod}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-500 font-medium">
+                    {new Date(txn.createdAt).toLocaleDateString("en-IN")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {transactions.length === 0 && (
+            <div className="py-20 text-center text-slate-400">
+              <History size={40} className="mx-auto mb-3 opacity-20" />
+              <p>No financial records match your filters.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

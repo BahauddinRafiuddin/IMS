@@ -16,6 +16,7 @@ import {
 } from "../../api/superAdmin.api";
 
 import StatCard from "../../components/ui/StatCard";
+import Loading from "../../components/common/Loading";
 
 const SuperAdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -43,7 +44,7 @@ const SuperAdminDashboard = () => {
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-gray-500">Loading dashboard...</div>;
+    return <Loading/>
   }
 
   return (

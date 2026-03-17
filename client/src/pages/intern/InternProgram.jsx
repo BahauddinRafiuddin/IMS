@@ -3,6 +3,7 @@ import { getMyProgram, startInternship } from "../../api/intern.api";
 import { Calendar, Clock, User, Mail, Users, BookOpen } from "lucide-react";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { initiatePayment } from "../../services/razorpay.service";
+import Loading from '../../components/common/Loading'
 
 const statusColor = {
   upcoming: "bg-yellow-100 text-yellow-700",
@@ -47,7 +48,7 @@ const InternPrograms = () => {
   };
 
   if (loading)
-    return <div className="text-center py-20">Loading programs...</div>;
+    return <Loading/>
 
   if (!programs.length)
     return (

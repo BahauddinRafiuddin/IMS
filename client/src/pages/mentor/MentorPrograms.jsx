@@ -9,6 +9,7 @@ import {
   CheckCircle,
   IndianRupee,
 } from "lucide-react";
+import Loading from "../../components/common/Loading";
 
 const MentorPrograms = () => {
   const [loading, setLoading] = useState(true);
@@ -53,9 +54,7 @@ const MentorPrograms = () => {
   };
 
   if (loading) {
-    return (
-      <div className="text-center py-20 text-gray-500">Loading programs...</div>
-    );
+    return <Loading />;
   }
 
   if (!programs.length) {

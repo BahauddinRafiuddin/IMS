@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import {
   getPendingReviews,
   approveReview,
-  rejectReview
+  rejectReview,
 } from "../../api/superAdmin.api";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { Check, X } from "lucide-react";
+import Loading from "../../components/common/Loading";
 
 const PendingReviews = () => {
   const [reviews, setReviews] = useState([]);
@@ -35,9 +36,7 @@ const PendingReviews = () => {
 
       setReviews((prev) => prev.filter((r) => r._id !== id));
     } catch (error) {
-      toastError(
-        error?.response?.data?.message || "Failed to approve review"
-      );
+      toastError(error?.response?.data?.message || "Failed to approve review");
     }
   };
 
@@ -48,15 +47,15 @@ const PendingReviews = () => {
 
       setReviews((prev) => prev.filter((r) => r._id !== id));
     } catch (error) {
-      toastError(
-        error?.response?.data?.message || "Failed to reject review"
-      );
+      toastError(error?.response?.data?.message || "Failed to reject review");
     }
   };
 
+  if (loading) {
+    return <Loading />;
+  }
   return (
     <div className="space-y-6">
-
       {/* HEADER */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
@@ -69,7 +68,6 @@ const PendingReviews = () => {
 
       {/* REVIEW TABLE */}
       <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
-
         {loading ? (
           <div className="p-10 text-center text-gray-500">
             Loading reviews...
@@ -81,7 +79,6 @@ const PendingReviews = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-
               {/* TABLE HEADER */}
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
@@ -90,7 +87,9 @@ const PendingReviews = () => {
                   <th className="px-6 py-4 text-left font-semibold">Program</th>
                   <th className="px-6 py-4 text-left font-semibold">Rating</th>
                   <th className="px-6 py-4 text-left font-semibold">Comment</th>
-                  <th className="px-6 py-4 text-right font-semibold">Actions</th>
+                  <th className="px-6 py-4 text-right font-semibold">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -98,7 +97,6 @@ const PendingReviews = () => {
               <tbody className="divide-y">
                 {reviews.map((review) => (
                   <tr key={review._id} className="hover:bg-gray-50 transition">
-
                     {/* INTERN */}
                     <td className="px-6 py-4 font-medium text-gray-800">
                       {review.intern?.name}
@@ -129,7 +127,6 @@ const PendingReviews = () => {
                     {/* ACTION BUTTONS */}
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-3">
-
                         <button
                           onClick={() => handleApprove(review._id)}
                           className="flex items-center gap-1 bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer"
@@ -145,14 +142,11 @@ const PendingReviews = () => {
                           <X size={14} />
                           Reject
                         </button>
-
                       </div>
                     </td>
-
                   </tr>
                 ))}
               </tbody>
-
             </table>
           </div>
         )}

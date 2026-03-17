@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getMentorInterns } from "../../api/mentor.api";
 import { Users, Mail, Calendar, BookOpen } from "lucide-react";
+import Loading from "../../components/common/Loading";
 
 const MentorInterns = () => {
   const [loading, setLoading] = useState(true);
@@ -24,9 +25,7 @@ const MentorInterns = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="text-center py-20 text-gray-500">Loading interns...</div>
-    );
+    return <Loading />;
   }
 
   if (!enrollments.length) {

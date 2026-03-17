@@ -58,13 +58,6 @@ const Landing = () => {
             >
               Log in
             </Link>
-            <Link
-              to="/register"
-              onClick={() => setOpen(false)}
-              className="block w-full text-center py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-md transition-colors"
-            >
-              Register
-            </Link>
           </div>
         )}
       </nav>

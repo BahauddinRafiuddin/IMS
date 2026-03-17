@@ -29,7 +29,7 @@ const Sidebar = ({ onClose }) => {
   },
   admin: {
     sidebarBg: "bg-[#1e1b4b]", // Deep Indigo
-    active: "bg-indigo-600 text-white shadow-lg shadow-indigo-900/50",
+    active: "bg-indigo-500 text-white shadow-lg shadow-indigo-900/50",
     hover: "hover:bg-white/10",
     logo: "text-indigo-400",
     accent: "bg-indigo-400/10"

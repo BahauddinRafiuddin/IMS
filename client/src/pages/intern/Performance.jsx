@@ -10,6 +10,7 @@ import {
   Star,
   BarChart3,
 } from "lucide-react";
+import Loading from "../../components/common/Loading";
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
   <div className="bg-white rounded-2xl shadow p-5 flex items-center gap-4">
@@ -52,9 +53,7 @@ const Performance = () => {
 
   if (loading)
     return (
-      <div className="text-center py-20 text-gray-500">
-        Loading performance...
-      </div>
+     <Loading/>
     );
 
   if (!performance)

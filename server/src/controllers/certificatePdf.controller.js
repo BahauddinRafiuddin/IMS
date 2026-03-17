@@ -1,9 +1,13 @@
-import { isValidObjectId } from "mongoose";
+import { fileURLToPath } from 'url';
+import path from 'path';
 import PDFDocument from "pdfkit";
 import InternshipProgram from "../models/InternshipProgram.js";
 import User from "../models/User.js";
 import { calculateInternPerformanceService } from "../services/performance.service.js";
 
+// --- Fix for __dirname in ES Modules ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const downloadCertificate = async (req, res) => {
   try {
@@ -12,175 +16,96 @@ export const downloadCertificate = async (req, res) => {
 
     const intern = await User.findById(internId);
     const program = await InternshipProgram.findById(programId);
+    const performance = await calculateInternPerformanceService(internId, programId);
 
-    const performance = await calculateInternPerformanceService(
-      internId,
-      programId
-    );
-
-    const eligible =
-      performance.totalTasks > 0 &&
+    const eligible = performance.totalTasks > 0 &&
       performance.grade !== "Fail" &&
       performance.completionPercentage >= 45;
 
     if (!eligible) {
-      return res.status(403).json({
-        success: false,
-        message: "Not eligible for certificate"
-      });
+      return res.status(403).json({ success: false, message: "Not eligible" });
     }
 
-    const doc = new PDFDocument({
-      size: "A4",
-      layout: "landscape",
-      margin: 40
-    });
+    const doc = new PDFDocument({ size: "A4", layout: "landscape", margin: 0 });
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=${intern.name}-certificate.pdf`
-    );
-
+    res.setHeader("Content-Disposition", `attachment; filename=Certificate-${intern.name.replace(/\s+/g, '_')}.pdf`);
     doc.pipe(res);
 
     const width = doc.page.width;
     const height = doc.page.height;
 
-    // ================= BACKGROUND =================
-    doc.rect(0, 0, width, height).fill("#ffffff");
+    // ================= SETTINGS =================
+    const primaryColor = "#1A237E";
+    const secondaryColor = "#C5A059";
+    const textColor = "#2C3E50";
 
-    // ================= GOLD BORDER =================
-    doc
-      .lineWidth(6)
-      .strokeColor("#d4af37")
-      .rect(20, 20, width - 40, height - 40)
-      .stroke();
+    // NOTE: Convert your logo.svg to logo.png. PDFKit does not support SVG out of the box.
+    const logoPath = path.join(__dirname, '../../../client/public/logo.png');
 
-    doc
-      .lineWidth(1.5)
-      .strokeColor("#2ecc71")
-      .rect(40, 40, width - 80, height - 80)
-      .stroke();
+    // ================= BACKGROUND & BORDERS =================
+    doc.rect(0, 0, width, height).fill("#FFFFFF");
 
-    // ================= LOGO =================
-    doc
-      .fillColor("#2ecc71")
-      .circle(90, 90, 10)
-      .fill();
+    // Thick Primary Border
+    doc.lineWidth(20).strokeColor(primaryColor).rect(10, 10, width - 20, height - 20).stroke();
+    // Thin Gold Accent Border
+    doc.lineWidth(1.5).strokeColor(secondaryColor).rect(30, 30, width - 60, height - 60).stroke();
 
-    doc
-      .fillColor("#2ecc71")
-      .fontSize(14)
-      .font("Helvetica-Bold")
-      .text("COMPANY", 110, 80);
+    // ================= LOGO SECTION =================
+    try {
+      // PDFKit needs PNG/JPG. If using SVG, you'd need the 'svg-to-pdfkit' library.
+      doc.image(logoPath, width / 2 - 50, 50, { width: 80 });
+    } catch (e) {
+      doc.fillColor(primaryColor).font("Helvetica-Bold").fontSize(22).text("IMS ACADEMY", 0, 70, { align: "center" });
+    }
 
-    doc
-      .fontSize(9)
-      .fillColor("#666")
-      .text("YOUR LOGO", 110, 98);
+    // ================= MAIN CONTENT =================
+    // Title
+    doc.font("Helvetica-Bold").fontSize(42).fillColor(primaryColor)
+      .text("CERTIFICATE OF COMPLETION", 0, 170, { align: "center", characterSpacing: 1 });
 
-    // ================= TITLE =================
-    doc
-      .fontSize(38)
-      .fillColor("#2ecc71")
-      .font("Helvetica-Bold")
-      .text("CERTIFICATE", 0, 140, {
-        align: "center"
-      });
+    // Sub-text
+    doc.font("Helvetica").fontSize(16).fillColor(textColor)
+      .text("THIS IS TO CERTIFY THAT", 0, 230, { align: "center" });
 
-    doc
-      .fontSize(20)
-      .fillColor("#444")
-      .text("OF ACHIEVEMENT", {
-        align: "center"
-      });
+    // Intern Name
+    doc.font("Times-BoldItalic").fontSize(52).fillColor(secondaryColor)
+      .text(intern.name, 0, 265, { align: "center" });
 
-    // ================= SUB TEXT =================
-    doc.moveDown(2);
+    // Description
+    doc.font("Helvetica").fontSize(16).fillColor(textColor)
+      .text("has successfully completed the intensive internship program in", 0, 340, { align: "center" });
 
-    doc
-      .fontSize(12)
-      .fillColor("#f39c12")
-      .font("Helvetica-Bold")
-      .text(
-        "THIS CERTIFICATE IS PROUDLY PRESENTED\nFOR HONORABLE ACHIEVEMENT TO",
-        {
-          align: "center"
-        }
-      );
+    // Program Title
+    doc.font("Helvetica-Bold").fontSize(24).fillColor(primaryColor)
+      .text(`${program.title}`, 0, 375, { align: "center" });
 
-    // ================= NAME =================
-    doc.moveDown(1);
+    // Grade
+    doc.font("Helvetica-Oblique").fontSize(15).fillColor(textColor)
+      .text(`Achieving an exceptional overall grade of ${performance.grade}`, 0, 415, { align: "center" });
 
-    doc
-      .fontSize(42)
-      .fillColor("#27ae60")
-      .font("Times-Italic")
-      .text(intern.name, {
-        align: "center"
-      });
+    // ================= FOOTER / SIGNATURES =================
+    const footerY = height - 120;
 
-    // ================= DESCRIPTION =================
-    doc.moveDown(1);
+    // Left Side: Date
+    doc.font("Helvetica-Bold").fontSize(12).fillColor(textColor).text("DATE", 100, footerY - 15);
+    doc.font("Helvetica").text(new Date().toLocaleDateString('en-GB'), 100, footerY + 5);
 
-    doc
-      .fontSize(14)
-      .fillColor("#555")
-      .font("Helvetica")
-      .text(
-        `has successfully completed the internship program\n "${program.title}" under the domain of ${program.domain}.`,
-        {
-          align: "center",
-          width: width - 80
-        }
-      );
+    // Right Side: Signature Line
+    doc.lineWidth(1).strokeColor(textColor);
+    doc.moveTo(width - 280, footerY).lineTo(width - 100, footerY).stroke();
+    doc.font("Helvetica-Bold").fontSize(12).text("PROGRAM DIRECTOR", width - 280, footerY + 10, { width: 180, align: 'center' });
 
-    // ================= SIGNATURE AREA =================
-    const signY = height - 120;
-
-    doc
-      .moveTo(220, signY)
-      .lineTo(380, signY)
-      .strokeColor("#2ecc71")
-      .stroke();
-
-    doc
-      .moveTo(width - 380, signY)
-      .lineTo(width - 220, signY)
-      .stroke();
-
-    doc
-      .fontSize(10)
-      .fillColor("#2ecc71")
-      .text("SIGNATURE", 260, signY + 10);
-
-    doc
-      .text("SIGNATURE", width - 340, signY + 10);
-
-    // ================= FOOTER =================
-    const certId =
-      "IMS-" +
-      new Date().getFullYear() +
-      "-" +
-      Math.floor(100000 + Math.random() * 900000);
-
-    doc
-      .fontSize(9)
-      .fillColor("#777")
-      .text(
-        `Certificate ID: ${certId}`,
-        0,
-        height - 60,
-        { align: "center" }
-      );
+    // Center: Verification ID
+    const certId = `IMS-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+    doc.fontSize(10).fillColor("#7F8C8D").text(`Verification ID: ${certId}`, 0, height - 50, { align: "center" });
 
     doc.end();
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Certificate generation failed"
-    });
+    console.error("Critical PDF Error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: "Certificate generation failed" });
+    }
   }
 };

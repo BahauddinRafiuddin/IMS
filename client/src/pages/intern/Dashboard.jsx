@@ -3,6 +3,7 @@ import StatCard from "../../components/ui/StatCard";
 import { BookOpen, ClipboardList, CheckCircle, Clock } from "lucide-react";
 import { getMyPerformance, getMyProgram } from "../../api/intern.api";
 import { useNavigate } from "react-router-dom";
+import Loading from "../../components/common/Loading";
 
 const InternDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -60,6 +61,9 @@ const InternDashboard = () => {
         <p className="text-gray-500 mt-2">Please contact admin</p>
       </div>
     );
+  }
+  if(loading){
+    return <Loading/>
   }
 
   return (

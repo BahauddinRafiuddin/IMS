@@ -3,14 +3,10 @@ import { useEffect, useState } from "react";
 import {
   checkCertificateEligibility,
   generateCertificate,
-  getMyProgram
+  getMyProgram,
 } from "../../api/intern.api";
-import {
-  Award,
-  Download,
-  Lock,
-  CheckCircle
-} from "lucide-react";
+import { Award, Download, Lock, CheckCircle } from "lucide-react";
+import Loading from "../../components/common/Loading";
 
 const Certificate = () => {
   const [loading, setLoading] = useState(true);
@@ -45,7 +41,7 @@ const Certificate = () => {
       const response = await generateCertificate(programId);
 
       const blob = new Blob([response], {
-        type: "application/pdf"
+        type: "application/pdf",
       });
 
       const url = window.URL.createObjectURL(blob);
@@ -60,46 +56,27 @@ const Certificate = () => {
     }
   };
 
-  if (loading)
-    return (
-      <div className="py-20 text-center text-gray-500">
-        Checking certificate eligibility...
-      </div>
-    );
+  if (loading) return <Loading />;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-
       {/* ================= HEADER ================= */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">
-          My Certificate
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Internship completion certificate
-        </p>
+        <h1 className="text-3xl font-bold text-gray-800">My Certificate</h1>
+        <p className="text-gray-500 mt-1">Internship completion certificate</p>
       </div>
 
       {/* ================= CARD ================= */}
       <div className="bg-white rounded-3xl shadow-xl p-8 text-center space-y-6">
-
         {/* ICON */}
         {eligible ? (
-          <Award
-            size={80}
-            className="mx-auto text-yellow-500"
-          />
+          <Award size={80} className="mx-auto text-yellow-500" />
         ) : (
-          <Lock
-            size={80}
-            className="mx-auto text-gray-400"
-          />
+          <Lock size={80} className="mx-auto text-gray-400" />
         )}
 
         {/* TITLE */}
-        <h2 className="text-2xl font-bold">
-          Internship Certificate
-        </h2>
+        <h2 className="text-2xl font-bold">Internship Certificate</h2>
 
         {/* STATUS */}
         {eligible ? (
@@ -110,21 +87,15 @@ const Certificate = () => {
             </div>
 
             <div className="text-gray-600 text-sm">
-              Grade:{" "}
-              <b className="text-gray-900">
-                {details.grade}
-              </b>{" "}
-              • Completion:{" "}
-              <b className="text-gray-900">
-                {details.completionPercentage}%
-              </b>
+              Grade: <b className="text-gray-900">{details.grade}</b> •
+              Completion:{" "}
+              <b className="text-gray-900">{details.completionPercentage}%</b>
             </div>
           </div>
         ) : (
           <p className="text-gray-500 max-w-md mx-auto">
-            You are not eligible yet.  
-            Complete your tasks and improve performance
-            to unlock your certificate.
+            You are not eligible yet. Complete your tasks and improve
+            performance to unlock your certificate.
           </p>
         )}
 

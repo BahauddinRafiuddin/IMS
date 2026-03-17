@@ -3,6 +3,7 @@ import { IndianRupee, BookOpen, Calendar, Receipt } from "lucide-react";
 import { getInternPaymentHistory } from "../../api/intern.api";
 import StatCard from "../../components/ui/StatCard";
 import TableExportButtons from "../../components/common/TableExportButtons";
+import Loading from "../../components/common/Loading";
 
 const InternPayments = () => {
   const [data, setData] = useState(null);
@@ -27,9 +28,7 @@ const InternPayments = () => {
 
   if (loading) {
     return (
-      <div className="py-20 text-center text-gray-500">
-        Loading payment history...
-      </div>
+      <Loading/>
     );
   }
 
