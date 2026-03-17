@@ -1,30 +1,34 @@
+/* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
-import { getMyTasks } from "../../api/intern.api";
+import { getMyTasks, submitTask } from "../../api/intern.api";
 import {
   BookOpen,
   Clock,
-  AlertCircle,
   CheckCircle,
   User,
   Calendar,
+  AlertCircle,
+  MessageSquare,
+  Star,
+  ArrowUpRight,
+  ShieldAlert
 } from "lucide-react";
 import SubmitTaskModal from "../../components/intern/SubmitTaskModal";
-import { submitTask } from "../../api/intern.api";
 import { toastSuccess, toastError } from "../../utils/toast";
 import Loading from "../../components/common/Loading";
 
 const priorityColors = {
-  low: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  high: "bg-red-100 text-red-700",
+  low: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  medium: "bg-amber-50 text-amber-700 border-amber-100",
+  high: "bg-rose-50 text-rose-700 border-rose-100",
 };
 
 const statusColors = {
-  pending: "bg-gray-100 text-gray-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  submitted: "bg-indigo-100 text-indigo-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+  pending: "bg-slate-100 text-slate-600",
+  in_progress: "bg-blue-50 text-blue-600 border-blue-100",
+  submitted: "bg-indigo-50 text-indigo-700 border-indigo-100",
+  approved: "bg-emerald-100 text-emerald-800",
+  rejected: "bg-rose-100 text-rose-800 font-bold",
 };
 
 const InternTasks = () => {
@@ -32,18 +36,18 @@ const InternTasks = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
 
-  useEffect(() => {
-    const fetchMyTasks = async () => {
-      try {
-        const res = await getMyTasks();
-        setTasks(res.tasks || []);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchMyTasks = async () => {
+    try {
+      const res = await getMyTasks();
+      setTasks(res.tasks || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchMyTasks();
   }, []);
 
@@ -51,182 +55,122 @@ const InternTasks = () => {
     try {
       await submitTask(selectedTask._id, data);
       toastSuccess("Task submitted successfully");
-
       setSelectedTask(null);
-
-      // refresh list
-      const res = await getMyTasks();
-      setTasks(res.tasks || []);
+      fetchMyTasks();
     } catch (err) {
       toastError(err.response?.data?.message || "Submission failed");
     }
   };
 
-  // console.log("task", tasks);
-  if (loading)
-    return <Loading/>
+  if (loading) return <Loading />;
 
-  if (!tasks.length)
-    return (
-      <div className="bg-white p-10 rounded-xl text-center shadow">
-        <BookOpen className="mx-auto text-gray-400 mb-4" size={42} />
-        <h2 className="text-xl font-semibold">No Tasks Assigned</h2>
-        <p className="text-gray-500 mt-2">
-          Your mentor has not assigned any tasks yet.
-        </p>
-      </div>
-    );
+  if (!tasks.length) return (
+    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[2.5rem] border border-dashed border-slate-200 text-center mx-4">
+      <BookOpen className="text-slate-300 mb-4" size={60} />
+      <h2 className="text-xl font-bold text-slate-800">No Tasks Assigned</h2>
+      <p className="text-slate-500 max-w-xs mt-2 text-sm font-medium italic">Your mentor hasn't released any assignments yet.</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-7xl mx-auto space-y-10 pb-12 px-4">
       {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">My Tasks</h1>
-        <p className="text-gray-500 mt-1">View and manage all assigned tasks</p>
+      <div className="border-b border-slate-200 pb-8">
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Assignment Feed</h1>
+        <p className="text-slate-500 mt-1 font-medium">Complete tasks and review mentor feedback.</p>
       </div>
 
-      {/* ================= DESKTOP TABLE ================= */}
-      <div className="hidden lg:block bg-white rounded-2xl shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-5 py-4 text-left">Task</th>
-              <th className="px-5 py-4 text-left">Program</th>
-              <th className="px-5 py-4 text-left">Mentor</th>
-              <th className="px-5 py-4 text-center">Priority</th>
-              <th className="px-5 py-4 text-center">Status</th>
-              <th className="px-5 py-4 text-center">Deadline</th>
-              <th className="px-5 py-4 text-center">Attempts</th>
-            </tr>
-          </thead>
+      {/* TASK LIST (Mobile & Desktop Unified for Clarity) */}
+      <div className="space-y-6">
+        {tasks.map((task) => (
+          <div key={task._id} className="group bg-white rounded-4xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+            <div className="flex flex-col lg:flex-row lg:items-stretch">
+              
+              {/* STATUS INDICATOR BAR */}
+              <div className={`w-full lg:w-2 h-2 lg:h-auto ${
+                task.status === 'approved' ? 'bg-emerald-500' : 
+                task.status === 'rejected' ? 'bg-rose-500' : 
+                task.status === 'submitted' ? 'bg-indigo-500' : 'bg-slate-200'
+              }`} />
 
-          <tbody>
-            {tasks.map((task) => (
-              <tr
-                key={task._id}
-                className="border-t hover:bg-gray-50 transition"
-              >
-                <td className="px-5 py-4">
-                  <p className="font-semibold">{task.title}</p>
-                  <p className="text-sm text-gray-500">{task.description}</p>
-                </td>
+              <div className="p-6 lg:p-8 flex-1">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                  
+                  {/* LEFT: CONTENT */}
+                  <div className="space-y-4 max-w-3xl">
+                    <div className="flex items-center gap-3">
+                       <h2 className="text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">
+                          {task.title}
+                       </h2>
+                       <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${priorityColors[task.priority]}`}>
+                          {task.priority}
+                       </span>
+                    </div>
 
-                <td className="px-5 py-4">{task.program?.title}</td>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed italic line-clamp-2">
+                      {task.description}
+                    </p>
 
-                <td className="px-5 py-4">{task.mentor?.name}</td>
+                    {/* METADATA STRIP */}
+                    <div className="flex flex-wrap gap-x-6 gap-y-3 pt-2">
+                       <MetaPill icon={BookOpen} label="Program" value={task.program?.title} />
+                       <MetaPill icon={User} label="Mentor" value={task.mentor?.name} />
+                       <MetaPill icon={Calendar} label="Deadline" value={new Date(task.deadline).toDateString()} />
+                       <MetaPill icon={Clock} label="Attempts" value={task.attempts} />
+                       <MetaPill 
+                          icon={AlertCircle} 
+                          label="Status" 
+                          value={task.status.replace("_", " ")} 
+                          colorBadge={statusColors[task.status]} 
+                       />
+                    </div>
 
-                <td className="px-5 py-4 text-center">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[task.priority]}`}
-                  >
-                    {task.priority.toUpperCase()}
-                  </span>
-                </td>
-
-                <td className="px-5 py-4 text-center">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[task.status]}`}
-                  >
-                    {task.status.replace("_", " ").toUpperCase()}
-                  </span>
-                </td>
-
-                <td className="px-5 py-4 text-center text-sm">
-                  {new Date(task.deadline).toDateString()}
-                </td>
-
-                <td className="px-5 py-4 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-sm text-gray-600">
-                      {task.attempts}
-                    </span>
-
-                    {(task.status === "pending" ||
-                      task.status === "rejected") && (
-                      <button
-                        onClick={() => setSelectedTask(task)}
-                        className="
-          px-4 py-1.5
-          text-xs
-          rounded-md
-          bg-blue-600
-          hover:bg-blue-700
-          text-white
-          cursor-pointer
-        "
-                      >
-                        Submit
-                      </button>
+                    {/* 🔥 MENTOR FEEDBACK SECTION (New) */}
+                    {(task.feedback || task.score !== undefined) && (
+                      <div className="mt-6 p-5 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row gap-6">
+                        {task.score !== undefined && (
+                          <div className="flex flex-col items-center justify-center sm:border-r border-slate-200 pr-0 sm:pr-6">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Score</span>
+                            <div className="flex items-center gap-1 text-amber-500">
+                               <Star size={14} className="fill-amber-500" />
+                               <span className="text-xl font-black text-slate-800">{task.score}<span className="text-xs text-slate-400">/10</span></span>
+                            </div>
+                          </div>
+                        )}
+                        {task.feedback && (
+                          <div className="flex-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-2">
+                               <MessageSquare size={12}/> Mentor Feedback
+                            </span>
+                            <p className="text-sm text-slate-600 font-medium leading-relaxed italic bg-white p-3 rounded-xl border border-slate-50">
+                               "{task.feedback}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
 
-      {/* ================= MOBILE CARDS ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:hidden">
-        {tasks.map((task) => (
-          <div
-            key={task._id}
-            className="bg-white rounded-2xl shadow p-6 space-y-3"
-          >
-            <h2 className="text-lg font-bold">{task.title}</h2>
+                  {/* RIGHT: ACTION BUTTON */}
+                  <div className="flex items-center lg:items-start justify-end min-w-35">
+                    {(task.status === "pending" || task.status === "rejected" || task.status === "in_progress") ? (
+                      <button
+                        onClick={() => setSelectedTask(task)}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-black text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-indigo-100 active:scale-95 cursor-pointer"
+                      >
+                        {task.status === "rejected" ? "Resubmit Work" : "Submit Task"}
+                        <ArrowUpRight size={14} />
+                      </button>
+                    ) : (
+                      <div className="text-center px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <CheckCircle size={20} className="mx-auto text-emerald-500 mb-1" />
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Locked</span>
+                      </div>
+                    )}
+                  </div>
 
-            <p className="text-sm text-gray-600">{task.description}</p>
-
-            <div className="text-sm flex gap-2 items-center">
-              <BookOpen size={16} />
-              {task.program?.title}
-            </div>
-
-            <div className="text-sm flex gap-2 items-center">
-              <User size={16} />
-              {task.mentor?.name}
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-2">
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[task.priority]}`}
-              >
-                {task.priority}
-              </span>
-
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[task.status]}`}
-              >
-                {task.status}
-              </span>
-            </div>
-
-            <div className="text-sm text-gray-600 flex items-center gap-2">
-              <Calendar size={16} />
-              Due: {new Date(task.deadline).toDateString()}
-            </div>
-
-            <div className="pt-3 flex justify-between items-center border-t">
-              <span className="text-sm text-gray-500">
-                Attempts: {task.attempts}
-              </span>
-
-              {(task.status === "pending" || task.status === "rejected") && (
-                <button
-                  onClick={() => setSelectedTask(task)}
-                  className="
-        px-4 py-1.5
-        text-sm
-        bg-blue-600
-        text-white
-        rounded-lg
-        hover:bg-blue-700
-        cursor-pointer
-      "
-                >
-                  Submit
-                </button>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -242,5 +186,20 @@ const InternTasks = () => {
     </div>
   );
 };
+
+// --- HELPER COMPONENT ---
+const MetaPill = ({ icon: Icon, label, value, colorBadge }) => (
+  <div className="flex items-center gap-2">
+    <div className="p-1.5 bg-slate-50 text-slate-400 rounded-lg">
+      <Icon size={12} />
+    </div>
+    <div className="flex flex-col">
+       <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">{label}</span>
+       <span className={`text-[11px] font-bold ${colorBadge ? `px-2 py-0.5 rounded-md ${colorBadge} inline-block w-fit mt-0.5 uppercase tracking-tighter` : 'text-slate-700'}`}>
+          {value}
+       </span>
+    </div>
+  </div>
+);
 
 export default InternTasks;

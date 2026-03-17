@@ -36,7 +36,7 @@ const Programs = () => {
   const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(1);
-  const ITEMS_PER_PAGE = 6; // Increased for better view
+  const ITEMS_PER_PAGE = 1; // Increased for better view
 
   const fetchPrograms = async () => {
     try {

@@ -1,28 +1,35 @@
+/* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
 import { getMentorPrograms, getMentorTasks } from "../../api/mentor.api";
-import StatCard from "../../components/ui/StatCard";
 import {
   ClipboardList,
   Clock,
   CheckCircle,
   XCircle,
   AlertTriangle,
+  Plus,
+  User,
+  Calendar,
+  Layers,
+  SearchX,
+  ArrowUpRight,
+  Eye
 } from "lucide-react";
 import ReviewTaskModal from "../../components/mentor/ReviewTaskModal";
 import CreateTaskModal from "../../components/mentor/CreateTaskModal";
 import Loading from "../../components/common/Loading";
 
 const priorityColors = {
-  low: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  high: "bg-red-100 text-red-700",
+  low: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  medium: "bg-amber-50 text-amber-700 border-amber-100",
+  high: "bg-rose-50 text-rose-700 border-rose-100",
 };
 
 const statusColors = {
-  pending: "bg-gray-100 text-gray-700",
-  submitted: "bg-blue-100 text-blue-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+  pending: "bg-slate-100 text-slate-600",
+  submitted: "bg-indigo-50 text-indigo-700 border-indigo-100",
+  approved: "bg-emerald-100 text-emerald-800",
+  rejected: "bg-rose-100 text-rose-800",
 };
 
 const MentorTasks = () => {
@@ -66,34 +73,114 @@ const MentorTasks = () => {
   }, [showCreateModal]);
 
   if (loading) return <Loading />;
+
   return (
-    <div className="space-y-10">
-      {/* ================= HEADER ================= */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div className="max-w-7xl mx-auto space-y-10 pb-12 px-4">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Task Management</h1>
-          <p className="text-gray-500 mt-1">
-            Monitor intern progress and review submissions
-          </p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Task Management</h1>
+          <p className="text-slate-500 mt-1 font-medium">Assign objectives, track progress, and evaluate submissions.</p>
         </div>
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="
-          cursor-pointer
-          px-6 py-2.5
-          bg-linear-to-r from-indigo-600 to-purple-600
-          hover:opacity-90
-          text-white
-          rounded-xl
-          font-medium
-          shadow-md
-        "
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-black text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-indigo-100 active:scale-95 cursor-pointer"
         >
-          + Create Task
+          <Plus size={18} />
+          <span>Create Task</span>
         </button>
       </div>
 
+      {/* STATS STRIP */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <MiniStat label="Total" value={stats.totalTasks} icon={ClipboardList} color="indigo" />
+        <MiniStat label="Review" value={stats.pendingReviews} icon={Clock} color="amber" />
+        <MiniStat label="Approved" value={stats.approvedTasks} icon={CheckCircle} color="emerald" />
+        <MiniStat label="Rejected" value={stats.rejectedTasks} icon={XCircle} color="rose" />
+        <MiniStat label="Late" value={stats.lateSubmissions} icon={AlertTriangle} color="orange" />
+      </div>
+
+      {/* TASK FEED */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Assignment Feed</h3>
+            <span className="text-[10px] font-bold text-slate-400">{tasks.length} active tasks</span>
+        </div>
+
+        {tasks.length === 0 ? (
+          <div className="py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-200 text-center">
+             <SearchX size={48} className="mx-auto text-slate-200 mb-4" />
+             <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">No tasks found</p>
+          </div>
+        ) : (
+          tasks.map((task) => (
+            <div key={task._id} className="group relative bg-white rounded-4xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+              <div className="flex flex-col lg:flex-row">
+                
+                {/* STATUS INDICATOR BAR */}
+                <div className={`w-full lg:w-2 h-2 lg:h-auto ${
+                  task.status === 'approved' ? 'bg-emerald-500' : 
+                  task.status === 'rejected' ? 'bg-rose-500' : 
+                  task.status === 'submitted' ? 'bg-indigo-500' : 'bg-slate-200'
+                }`} />
+
+                <div className="p-6 lg:p-8 flex-1">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    
+                    {/* TASK CONTENT */}
+                    <div className="space-y-4 max-w-2xl">
+                      <div className="flex items-center gap-3">
+                         <h2 className="text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">
+                            {task.title}
+                         </h2>
+                         <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${priorityColors[task.priority]}`}>
+                            {task.priority} Priority
+                         </span>
+                      </div>
+
+                      <p className="text-sm text-slate-500 font-medium leading-relaxed italic">
+                        "{task.description}"
+                      </p>
+
+                      <div className="flex flex-wrap gap-4 pt-2">
+                         <MetaPill icon={User} label="Intern" value={task.assignedIntern?.name} />
+                         <MetaPill icon={Layers} label="Status" value={task.status} colorBadge={statusColors[task.status]} />
+                         <MetaPill icon={Calendar} label="Deadline" value={new Date(task.deadline).toDateString()} />
+                      </div>
+                    </div>
+
+                    {/* ACTION AREA */}
+                    <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 min-w-40">
+                      <div className="text-center">
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Attempts</p>
+                         <p className="text-lg font-black text-slate-700">{task.attempts}</p>
+                      </div>
+
+                      {task.status === "submitted" && task.reviewStatus !== "reviewed" ? (
+                        <button
+                          onClick={() => setSelectedTask(task)}
+                          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-black text-white rounded-xl font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                        >
+                          Review <ArrowUpRight size={14}/>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase">
+                          <CheckCircle size={14}/> {task.status === 'approved' ? 'Completed' : 'Evaluated'}
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* MODALS */}
       {showCreateModal && (
         <CreateTaskModal
           programs={programs}
@@ -102,122 +189,6 @@ const MentorTasks = () => {
         />
       )}
 
-      {/* ================= STATS ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
-        <StatCard
-          title="Total Tasks"
-          value={stats.totalTasks || 0}
-          icon={ClipboardList}
-          color="bg-blue-600"
-        />
-        <StatCard
-          title="Pending Reviews"
-          value={stats.pendingReviews || 0}
-          icon={Clock}
-          color="bg-yellow-500"
-        />
-        <StatCard
-          title="Approved"
-          value={stats.approvedTasks || 0}
-          icon={CheckCircle}
-          color="bg-green-600"
-        />
-        <StatCard
-          title="Rejected"
-          value={stats.rejectedTasks || 0}
-          icon={XCircle}
-          color="bg-red-600"
-        />
-        <StatCard
-          title="Late"
-          value={stats.lateSubmissions || 0}
-          icon={AlertTriangle}
-          color="bg-orange-500"
-        />
-      </div>
-
-      {/* ================= TASK LIST ================= */}
-      <div className="space-y-5">
-        {tasks.map((task) => (
-          <div
-            key={task._id}
-            className="
-            bg-white
-            rounded-2xl
-            shadow-sm
-            border
-            p-6
-            hover:shadow-md
-            transition
-          "
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              {/* LEFT */}
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {task.title}
-                </h2>
-
-                <p className="text-sm text-gray-500 max-w-2xl">
-                  {task.description}
-                </p>
-
-                <div className="flex flex-wrap gap-3 mt-3">
-                  <span className="text-sm text-gray-600">
-                    👤 {task.assignedIntern?.name}
-                  </span>
-
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[task.priority]}`}
-                  >
-                    Priority - {task.priority}
-                  </span>
-
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[task.status]}`}
-                  >
-                    Task Status - {task.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* RIGHT */}
-              <div className="flex flex-col  items-start sm:items-center gap-4 text-sm">
-                <div className="text-gray-500">
-                  <p>
-                    <b>Deadline:</b> {new Date(task.deadline).toDateString()}
-                  </p>
-                  <p>
-                    <b>Attempts:</b> {task.attempts}
-                  </p>
-                </div>
-
-                {task.status === "submitted" &&
-                task.reviewStatus !== "reviewed" ? (
-                  <button
-                    onClick={() => setSelectedTask(task)}
-                    className="
-                    cursor-pointer
-                    px-5 py-2
-                    bg-indigo-600
-                    hover:bg-indigo-700
-                    text-white
-                    rounded-lg
-                    font-medium
-                  "
-                  >
-                    Review
-                  </button>
-                ) : (
-                  <span className="text-gray-400"></span>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ================= REVIEW MODAL ================= */}
       {selectedTask && (
         <ReviewTaskModal
           task={selectedTask}
@@ -228,5 +199,42 @@ const MentorTasks = () => {
     </div>
   );
 };
+
+// --- SUB COMPONENTS ---
+
+const MiniStat = ({ label, value, icon: Icon, color }) => {
+  const colors = {
+    indigo: "bg-indigo-50 text-indigo-600",
+    amber: "bg-amber-50 text-amber-600",
+    emerald: "bg-emerald-50 text-emerald-600",
+    rose: "bg-rose-50 text-rose-600",
+    orange: "bg-orange-50 text-orange-600",
+  };
+  return (
+    <div className="bg-white border border-slate-200 p-4 rounded-2xl flex items-center gap-4 shadow-sm">
+       <div className={`p-2 rounded-xl ${colors[color]}`}>
+          <Icon size={18} />
+       </div>
+       <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter leading-none">{label}</p>
+          <p className="text-xl font-black text-slate-800 leading-tight">{value || 0}</p>
+       </div>
+    </div>
+  );
+};
+
+const MetaPill = ({ icon: Icon, label, value, colorBadge }) => (
+  <div className="flex items-center gap-2">
+    <div className="p-1.5 bg-slate-50 text-slate-400 rounded-lg">
+      <Icon size={12} />
+    </div>
+    <div className="flex flex-col">
+       <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">{label}</span>
+       <span className={`text-[11px] font-bold ${colorBadge ? `px-1.5 py-0.5 rounded ${colorBadge} inline-block w-fit mt-0.5` : 'text-slate-700'}`}>
+          {value}
+       </span>
+    </div>
+  </div>
+);
 
 export default MentorTasks;
