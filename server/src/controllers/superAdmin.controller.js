@@ -5,6 +5,8 @@ import Payment from '../models/Payment.js'
 import mongoose from "mongoose";
 import CommissionHistory from "../models/CommissionHistory.js";
 import Review from "../models/Review.js";
+import { exportToFile } from "../utils/export.util.js";
+
 
 export const getSuperAdminDashboard = async (req, res) => {
   try {
@@ -247,42 +249,116 @@ export const getCompanyTransactionReport = async (req, res) => {
     })
   }
 }
+
+// server side pagination
 export const getSingleCompanyComissionHistory = async (req, res) => {
   try {
-    const { companyId } = req.params
+    const { companyId } = req.params;
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+
+    const skip = (page - 1) * limit;
+
+    const total = await CommissionHistory.countDocuments({
+      company: companyId,
+    });
+
     const history = await CommissionHistory.find({ company: companyId })
       .populate("company", "name")
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     const data = history.map((item) => {
-
-      const start = new Date(item.startDate)
-      const end = item.endDate ? new Date(item.endDate) : new Date()
+      const start = new Date(item.startDate);
+      const end = item.endDate ? new Date(item.endDate) : new Date();
 
       const durationDays = Math.ceil(
         (end - start) / (1000 * 60 * 60 * 24)
-      )
+      );
+
       return {
         companyId: item.company._id,
         companyName: item.company.name,
         commissionPercentage: item.commissionPercentage,
         startDate: item.startDate,
         endDate: item.endDate,
-        durationDays
-      }
-    })
+        durationDays,
+      };
+    });
+
     res.json({
       success: true,
-      data
-    })
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
-    console.log(error.message)
+    console.log(error.message);
     res.status(500).json({
       success: false,
       message: error.message,
-    })
+    });
   }
 }
+
+// export comission history data
+export const exportCompanyCommissionHistory = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    const format = req.query.format || "excel";
+
+    const history = await CommissionHistory.find({ company: companyId })
+      .populate("company", "name")
+      .sort({ createdAt: -1 });
+
+    const data = history.map((item) => {
+      const start = new Date(item.startDate);
+      const end = item.endDate ? new Date(item.endDate) : new Date();
+
+      const durationDays = Math.ceil(
+        (end - start) / (1000 * 60 * 60 * 24)
+      );
+
+      return {
+        company: item.company.name,
+        commission: item.commissionPercentage + "%",
+        startDate: start.toISOString().split("T")[0],
+        endDate: item.endDate
+          ? end.toISOString().split("T")[0]
+          : "Active",
+        duration: durationDays + " days",
+      };
+    });
+
+    // ✅ Define columns (ONLY THIS stays in controller)
+    const columns = [
+      { header: "Company", key: "company", width: 25 },
+      { header: "Commission", key: "commission", width: 15 },
+      { header: "Start Date", key: "startDate", width: 15 },
+      { header: "End Date", key: "endDate", width: 15 },
+      { header: "Duration", key: "duration", width: 15 },
+    ];
+
+    // ✅ Call reusable util
+    return exportToFile({
+      res,
+      data,
+      format,
+      fileName: "commission-history",
+      columns,
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 export const getAllCompaniesCommissionHistory = async (req, res) => {
   try {
     const history = await CommissionHistory.find()

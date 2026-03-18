@@ -60,10 +60,41 @@ export const getAllCompaniesCommissionHistory = async () => {
   const res = await api.get('/superadmin/comission-history')
   return res.data
 }
-export const getSingleCompanyComissionHistory = async (companyId) => {
-  const res = await api.get(`/superadmin/comission-history/${companyId}`)
+export const exportCompanyCommissionHistory = async (companyId, format) => {
+  try {
+    const res = await api.get(
+      `/superadmin/comission-history/export/${companyId}?format=${format}`,
+      {
+        responseType: "blob", // ✅ VERY IMPORTANT
+      }
+    );
+
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+
+    link.setAttribute(
+      "download",
+      `commission-history.${format === "excel" ? "xlsx" : "pdf"}`
+    );
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    console.error("Download failed", error);
+  }
+};
+
+export const getSingleCompanyComissionHistory = async (companyId, page, limit) => {
+  const res = await api.get(
+    `/superadmin/comission-history/${companyId}?page=${page}&limit=${limit}`
+  )
+
   return res.data
 }
+
 export const getPendingReviews = async () => {
   const res = await api.get('/superadmin/pending-reviews')
   return res.data

@@ -6,19 +6,46 @@ export const getDashboardData = async () => {
   return res.data;
 }
 
-export const getAllInterns = async () => {
-  const res = await api.get('/admin/interns')
+export const getAllInterns = async (page, limit, search) => {
+  const res = await api.get(`/admin/interns?page=${page}&limit=${limit}&search=${search}`);
+  return res.data;
+}
+
+export const exportInternsApi = async (search, format) => {
+  const res = await api.get(
+    `/admin/intern/export?search=${search}&format=${format}`,
+    { responseType: "blob" } // Critical for downloading files
+  );
+
+  // Logic to trigger browser download
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `interns.${format === 'excel' ? 'xlsx' : 'pdf'}`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+export const getAllMentors = async (page, limit, search) => {
+  const res = await api.get(`/admin/mentors?page=${page}&limit=${limit}&search=${search}`)
   return res.data
 }
 
-export const getAllMentors = async () => {
-  const res = await api.get('/admin/mentors')
-  return res.data
-}
+export const exportMentorApi = async (search, format) => {
+  const res = await api.get(
+    `/admin/mentors/export?search=${search}&format=${format}`,
+    { responseType: "blob" } // Critical for downloading files
+  );
 
-export const getAllPrograms = async () => {
-  const res = await api.get('/admin/programs')
-  return res.data
+  // Logic to trigger browser download
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `mentors.${format === 'excel' ? 'xlsx' : 'pdf'}`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export const updateInternStatus = async (internId, isActive) => {

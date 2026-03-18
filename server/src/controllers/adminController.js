@@ -9,43 +9,8 @@ import Payment from "../models/Payment.js";
 import CompanyWallet from "../models/CompanyWallet.js";
 import { generateTempPassword } from "../utils/generatePassword.js";
 import Review from "../models/Review.js";
+import { exportToFile } from "../utils/export.util.js";
 
-
-// Admin Auth Controllers
-// export const createMentor = async (req, res) => {
-//   try {
-//     const { name, email, password } = req.body;
-//     if (!name || !email || !password) {
-//       return res.status(400).json({ success: false, message: 'All Fields Are Required!!' })
-//     }
-
-//     const user = await User.findOne({ email: email })
-//     if (user) {
-//       return res.status(400).json({ success: false, message: "User Already Exist With This Email" })
-//     }
-//     const mentor = await User.create({
-//       name,
-//       email,
-//       password,
-//       role: "mentor",
-//       isActive: true
-//     });
-
-//     res.status(201).json({
-//       success: true, message: "Mentor created", mentor: {
-//         name: mentor.name,
-//         id: mentor._id,
-//         email: mentor.email
-//       }
-//     });
-//   } catch (error) {
-//     console.log(error)
-//     res.status(500).json({
-//       success: false,
-//       message: 'Server Error In Mentore Creation'
-//     })
-//   }
-// };
 
 export const getAdminDashboard = async (req, res) => {
   try {
@@ -106,130 +71,215 @@ export const getAdminDashboard = async (req, res) => {
   }
 };
 
+// GET ALL INTERNS (with Pagination & Search)
 export const getAllInterns = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const search = req.query.search || "";
+    const skip = (page - 1) * limit;
 
-    // 1️⃣ Get all interns
-    const interns = await User.find({
+    const searchFilter = {
       role: "intern",
-      company: req.user.company
-    }).select("name email isActive");
+      company: req.user.company,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    };
 
-    if (!interns.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No interns found"
-      });
-    }
+    const total = await User.countDocuments(searchFilter);
+    const interns = await User.find(searchFilter)
+      .select("name email isActive")
+      .skip(skip)
+      .limit(limit)
+      .lean(); // Use lean for performance
 
-    // 2️⃣ Get all enrollments
-    const enrollments = await Enrollment.find({})
-      .populate("intern", "name email company")
-      .populate("mentor", "name email")
+    // Fetch enrollments for these specific interns only
+    const internIds = interns.map(i => i._id);
+    const enrollments = await Enrollment.find({ intern: { $in: internIds } })
+      .populate("mentor", "name")
       .select("intern mentor status");
 
-    // 3️⃣ Map intern → mentor + enrollment status
-    const internEnrollmentMap = {};
-
-    enrollments.forEach(enrollment => {
-      internEnrollmentMap[enrollment.intern._id.toString()] = {
-        mentor: enrollment.mentor,
-        enrollmentStatus: enrollment.status
+    const enrollmentMap = {};
+    enrollments.forEach(e => {
+      enrollmentMap[e.intern.toString()] = {
+        mentor: e.mentor,
+        status: e.status
       };
     });
 
-    // 4️⃣ Attach mentor + enrollment status
-    const finalInterns = interns.map(intern => {
-      const data = internEnrollmentMap[intern._id.toString()] || {};
+    const finalInterns = interns.map(i => ({
+      ...i,
+      mentor: enrollmentMap[i._id.toString()]?.mentor || null,
+      enrollmentStatus: enrollmentMap[i._id.toString()]?.status || null
+    }));
 
-      return {
-        _id: intern._id,
-        name: intern.name,
-        email: intern.email,
-        isActive: intern.isActive,
-        mentor: data.mentor || null,
-        enrollmentStatus: data.enrollmentStatus || null
-      };
-    });
-
-    return res.status(200).json({
+    res.json({
       success: true,
-      message: "Interns fetched successfully",
-      interns: finalInterns
+      interns: finalInterns,
+      totalPages: Math.ceil(total / limit),
+      total,
+      currentPage: page
     });
-
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Server error while fetching interns"
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// EXPORT INTERNS (Using your helper file)
+export const exportInterns = async (req, res) => {
+  try {
+    const { search = "", format = "excel" } = req.query;
+
+    const filter = {
+      role: "intern",
+      company: req.user.company,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    };
+
+    const interns = await User.find(filter).select("name email isActive").lean();
+    // ❌ CHECK IF DATA EXISTS
+    if (!interns || interns.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No intern data found to export"
+      });
+    }
+    // Format data for the export helper
+    const data = interns.map(i => ({
+      name: i.name,
+      email: i.email,
+      status: i.isActive ? "Active" : "Locked"
+    }));
+
+    const columns = [
+      { header: "Full Name", key: "name", width: 30 },
+      { header: "Email Address", key: "email", width: 40 },
+      { header: "Status", key: "status", width: 15 }
+    ];
+
+    // Call your helper function
+    return await exportToFile({
+      res,
+      data,
+      format,
+      fileName: `Interns_Report_${new Date().toISOString().split('T')[0]}`,
+      columns
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+// GET ALL MENTORS (with Pagination & Search)
 export const getAllMentors = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const search = req.query.search || "";
+    const skip = (page - 1) * limit;
 
-    const mentors = await User.find({
+    // 1. Search Filter
+    const filter = {
       role: "mentor",
-      company: req.user.company
-    }).select("name email");
+      company: req.user.company,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    };
 
-    // Get enrollments of company mentors
-    const enrollments = await Enrollment.find({})
-      .populate("mentor", "_id");
+    const total = await User.countDocuments(filter);
+    const mentors = await User.find(filter)
+      .select("name email isActive")
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // 2. Aggregation for Stats (Efficient way)
+    const mentorIds = mentors.map(m => m._id);
+    const enrollments = await Enrollment.find({ mentor: { $in: mentorIds } });
 
     const mentorStats = {};
-
     enrollments.forEach(e => {
-      const mentorId = e.mentor?._id?.toString();
-
-      if (!mentorId) return;
-
-      if (!mentorStats[mentorId]) {
-        mentorStats[mentorId] = {
-          internCount: 0,
-          activeInternships: 0,
-          completedInternships: 0
-        };
+      const mId = e.mentor.toString();
+      if (!mentorStats[mId]) {
+        mentorStats[mId] = { total: 0, active: 0, completed: 0 };
       }
-
-      mentorStats[mentorId].internCount += 1;
-
-      if (e.status === "in_progress" || e.status === "approved") {
-        mentorStats[mentorId].activeInternships += 1;
-      }
-
-      if (e.status === "completed") {
-        mentorStats[mentorId].completedInternships += 1;
-      }
+      mentorStats[mId].total += 1;
+      if (["in_progress", "approved"].includes(e.status)) mentorStats[mId].active += 1;
+      if (e.status === "completed") mentorStats[mId].completed += 1;
     });
 
-    const finalMentors = mentors.map(m => {
-      const stats = mentorStats[m._id.toString()] || {};
+    const finalMentors = mentors.map(m => ({
+      ...m,
+      internCount: mentorStats[m._id]?.total || 0,
+      activeInternships: mentorStats[m._id]?.active || 0,
+      completedInternships: mentorStats[m._id]?.completed || 0
+    }));
 
-      return {
-        ...m.toObject(),
-        internCount: stats.internCount || 0,
-        activeInternships: stats.activeInternships || 0,
-        completedInternships: stats.completedInternships || 0
-      };
-    });
-
-    return res.status(200).json({
+    res.json({
       success: true,
-      mentors: finalMentors
+      mentors: finalMentors,
+      totalPages: Math.ceil(total / limit),
+      total
     });
-
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Server error while fetching mentors"
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// EXPORT MENTORS (Using your helper file)
+export const exportMentors = async (req, res) => {
+  try {
+    const { search = "", format = "excel" } = req.query;
+
+    const filter = {
+      role: "mentor",
+      company: req.user.company,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    };
+
+    const mentors = await User.find(filter).select("name email isActive").lean();
+    // ❌ CHECK IF DATA EXISTS
+    if (!mentors || mentors.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No mentor data found to export"
+      });
+    }
+    // Format for the helper
+    const data = mentors.map(m => ({
+      name: m.name,
+      email: m.email,
+      status: m.isActive ? "Active" : "Locked"
+    }));
+
+    const columns = [
+      { header: "Mentor Name", key: "name", width: 30 },
+      { header: "Email Address", key: "email", width: 40 },
+      { header: "Status", key: "status", width: 15 }
+    ];
+
+    return await exportToFile({
+      res,
+      data,
+      format,
+      fileName: `Mentors_List`,
+      columns
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
 export const deleteMentorById = async (req, res) => {
   try {
     const { mentorId } = req.params;
@@ -373,75 +423,102 @@ export const createProgram = async (req, res) => {
 
 export const getAllPrograms = async (req, res) => {
   try {
-    const programs = await InternshipProgram.aggregate([
-      // Join Mentor
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const search = req.query.search || "";
+    const skip = (page - 1) * limit;
+
+    const result = await InternshipProgram.aggregate([
+      // 1. Filter by Company
+      { $match: { company: req.user.company } },
+
+      // 2. Search Filter (Title, Domain, or Status)
       {
-        $match: { company: req.user.company }
-      },
-      {
-        $lookup: {
-          from: "users", // mentor collection
-          localField: "mentor",
-          foreignField: "_id",
-          as: "mentor"
-        }
-      },
-      // Convert mentor array to object
-      {
-        $unwind: {
-          path: "$mentor",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      // 🔹 Join Tasks
-      {
-        $lookup: {
-          from: "tasks",
-          localField: "_id",
-          foreignField: "program",
-          as: "tasks"
+        $match: {
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { domain: { $regex: search, $options: "i" } },
+            { status: { $regex: search, $options: "i" } },
+          ],
         }
       },
 
-      // 🔹 Add totalTasks field
+      // 3. Facet for Pagination & Total Count
       {
-        $addFields: {
-          totalTasks: { $size: "$tasks" }
-        }
-      },
-
-      // 🔹 Clean response
-      {
-        $project: {
-          tasks: 0, // remove full task array
-          "mentor.password": 0, // hide sensitive fields
-          "mentor.__v": 0
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $lookup: { from: "users", localField: "mentor", foreignField: "_id", as: "mentor" } },
+            { $unwind: { path: "$mentor", preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: "tasks", localField: "_id", foreignField: "program", as: "tasks" } },
+            { $addFields: { totalTasks: { $size: "$tasks" } } },
+            { $project: { tasks: 0, "mentor.password": 0, "mentor.__v": 0 } },
+            { $sort: { createdAt: -1 } }, // Newest first
+            { $skip: skip },
+            { $limit: limit }
+          ]
         }
       }
-
     ]);
 
-    if (!programs.length) {
-      return res.status(404).json({
-        success: false,
-        message: "Programs Not Found!"
-      });
-    }
+    const programs = result[0].data;
+    const total = result[0].metadata[0]?.total || 0;
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "Programs Found Successfully",
-      programs
+      programs,
+      totalPages: Math.ceil(total / limit),
+      total
     });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Server Error While Fetching Internship Program"
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
+
+// EXPORT PROGRAMS
+export const exportPrograms = async (req, res) => {
+  try {
+    const { search = "", format = "excel" } = req.query;
+
+    const filter = {
+      company: req.user.company,
+      $or: [
+        { title: { $regex: search, $options: "i" } },
+        { domain: { $regex: search, $options: "i" } },
+      ],
+    };
+
+    const programs = await InternshipProgram.find(filter)
+      .populate("mentor", "name")
+      .lean();
+
+    if (!programs.length) {
+      return res.status(404).json({ success: false, message: "No programs to export" });
+    }
+
+    const data = programs.map(p => ({
+      title: p.title,
+      domain: p.domain,
+      mentor: p.mentor?.name || "N/A",
+      status: p.status,
+      type: p.type,
+      price: p.type === 'free' ? 'Free' : `₹${p.price}`
+    }));
+
+    const columns = [
+      { header: "Program Title", key: "title", width: 30 },
+      { header: "Domain", key: "domain", width: 20 },
+      { header: "Mentor", key: "mentor", width: 25 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Price", key: "price", width: 15 }
+    ];
+
+    return await exportToFile({ res, data, format, fileName: `Programs_Report`, columns });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // Change Program Status
 export const changeProgramStatus = async (req, res) => {

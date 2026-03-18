@@ -1,22 +1,27 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { getSingleCompanyComissionHistory } from "../../api/superAdmin.api";
+import { getSingleCompanyComissionHistory,exportCompanyCommissionHistory } from "../../api/superAdmin.api";
 import Pagination from "../common/Pagination";
-import TableExportButtons from "../common/TableExportButtons";
 
 const CompanyCommissionHistoryModal = ({ company, onClose }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
-  const limit = 5;
+  const limit = 3;
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const res = await getSingleCompanyComissionHistory(company._id);
+        const res = await getSingleCompanyComissionHistory(
+          company._id,
+          page,
+          limit,
+        );
 
         setData(res.data || []);
+        setTotalPages(res.totalPages); // ✅ important
       } catch (err) {
         console.error(err);
       } finally {
@@ -25,30 +30,9 @@ const CompanyCommissionHistoryModal = ({ company, onClose }) => {
     };
 
     fetchData();
-  }, [company]);
+  }, [company, page]); // ✅ ADD page here
 
-  const totalPages = Math.ceil(data.length / limit);
 
-  const start = (page - 1) * limit;
-  const paginatedData = data.slice(start, start + limit);
-
-  const exportData = data.map((item) => ({
-  Company: item.companyName,
-  Commission: item.commissionPercentage + "%",
-  "Start Date": new Date(item.startDate).toISOString().split("T")[0],
-  "End Date": item.endDate
-    ? new Date(item.endDate).toISOString().split("T")[0]
-    : "Active",
-  "Duration (Days)": item.durationDays,
-}));
-
-  const columns = [
-    "Company",
-    "Commission",
-    "Start Date",
-    "End Date",
-    "Duration (Days)",
-  ];
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
       <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl p-8 relative">
@@ -67,12 +51,20 @@ const CompanyCommissionHistoryModal = ({ company, onClose }) => {
         </div>
 
         {/* EXPORT BUTTONS */}
-        <div className="flex justify-end mb-4">
-          <TableExportButtons
-            data={exportData}
-            columns={columns}
-            fileName="commission-history"
-          />
+        <div className="flex gap-2 justify-end mb-4">
+          <button
+            onClick={() => exportCompanyCommissionHistory(company._id, "excel")}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
+          >
+            Export Excel
+          </button>
+
+          <button
+            onClick={() => exportCompanyCommissionHistory(company._id, "pdf")}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition"
+          >
+            Export PDF
+          </button>
         </div>
 
         {loading ? (
@@ -95,7 +87,7 @@ const CompanyCommissionHistoryModal = ({ company, onClose }) => {
                 </thead>
 
                 <tbody className="divide-y">
-                  {paginatedData.map((item, i) => (
+                  {data.map((item, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition">
                       <td className="px-4 py-3 font-medium">
                         {item.companyName}

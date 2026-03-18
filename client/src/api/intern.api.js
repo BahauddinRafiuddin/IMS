@@ -28,7 +28,7 @@ export const checkCertificateEligibility = async (programId) => {
 export const generateCertificate = async (programId) => {
   const res = await api.get(
     `/certificate/download/${programId}`,
-    { responseType: "blob" }   // ⭐ REQUIRED
+    { responseType: "blob" }   
   );
   return res.data;
 };
