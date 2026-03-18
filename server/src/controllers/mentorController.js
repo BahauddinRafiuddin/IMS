@@ -380,7 +380,7 @@ export const getMentorDashboard = async (req, res) => {
     ).length;
 
     // Recent Data
-    const recentTasks = tasks.slice(0, 5);
+    const recentTasks = tasks.slice(0, 3);
 
     const recentPrograms = programs
       .sort((a, b) => b.createdAt - a.createdAt)
@@ -480,7 +480,7 @@ export const getMentorTasks = async (req, res) => {
         path: "enrollment",
         match: { status: { $ne: "completed" } },
         select: "status"
-      });
+      }).sort({ createdAt: -1 })
 
     // remove tasks with completed enrollment
     const filteredTasks = mentorTasks.filter(t => t.enrollment);

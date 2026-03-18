@@ -47,7 +47,7 @@ const AdminDashboard = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-12">
       {/* 1. WELCOME HERO SECTION */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-4xl8 md:p-12 shadow-2xl shadow-indigo-200/50">
+      <div className="relative hidden sm:block rounded-2xl overflow-hidden bg-slate-900 rounded-4xl8 md:p-12 shadow-2xl shadow-indigo-200/50">
         {/* Abstract Background Shapes */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl -ml-10 -mb-10"></div>

@@ -13,11 +13,11 @@ import {
   Layers,
   SearchX,
   ArrowUpRight,
-  Eye
 } from "lucide-react";
 import ReviewTaskModal from "../../components/mentor/ReviewTaskModal";
 import CreateTaskModal from "../../components/mentor/CreateTaskModal";
 import Loading from "../../components/common/Loading";
+import Pagination from "../../components/common/Pagination"; // Import pagination
 
 const priorityColors = {
   low: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -39,6 +39,10 @@ const MentorTasks = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [programs, setPrograms] = useState([]);
+
+  // PAGINATION STATE
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2;
 
   const handleTaskCreated = (newTask) => {
     setTasks((prev) => [newTask, ...prev]);
@@ -72,6 +76,12 @@ const MentorTasks = () => {
     fetchTasks();
   }, [showCreateModal]);
 
+  // PAGINATION LOGIC
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTasks = tasks.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(tasks.length / itemsPerPage);
+
   if (loading) return <Loading />;
 
   return (
@@ -81,7 +91,7 @@ const MentorTasks = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Task Management</h1>
-          <p className="text-slate-500 mt-1 font-medium">Assign objectives, track progress, and evaluate submissions.</p>
+          <p className="text-slate-500 mt-1 font-medium italic text-sm">Assign objectives, track progress, and evaluate submissions.</p>
         </div>
 
         <button
@@ -115,68 +125,79 @@ const MentorTasks = () => {
              <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">No tasks found</p>
           </div>
         ) : (
-          tasks.map((task) => (
-            <div key={task._id} className="group relative bg-white rounded-4xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-              <div className="flex flex-col lg:flex-row">
-                
-                {/* STATUS INDICATOR BAR */}
-                <div className={`w-full lg:w-2 h-2 lg:h-auto ${
-                  task.status === 'approved' ? 'bg-emerald-500' : 
-                  task.status === 'rejected' ? 'bg-rose-500' : 
-                  task.status === 'submitted' ? 'bg-indigo-500' : 'bg-slate-200'
-                }`} />
-
-                <div className="p-6 lg:p-8 flex-1">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <>
+            <div className="space-y-6">
+              {currentTasks.map((task) => (
+                <div key={task._id} className="group relative bg-white rounded-4xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                  <div className="flex flex-col lg:flex-row">
                     
-                    {/* TASK CONTENT */}
-                    <div className="space-y-4 max-w-2xl">
-                      <div className="flex items-center gap-3">
-                         <h2 className="text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">
-                            {task.title}
-                         </h2>
-                         <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${priorityColors[task.priority]}`}>
-                            {task.priority} Priority
-                         </span>
-                      </div>
+                    {/* STATUS INDICATOR BAR */}
+                    <div className={`w-full lg:w-2 h-2 lg:h-auto ${
+                      task.status === 'approved' ? 'bg-emerald-500' : 
+                      task.status === 'rejected' ? 'bg-rose-500' : 
+                      task.status === 'submitted' ? 'bg-indigo-500' : 'bg-slate-200'
+                    }`} />
 
-                      <p className="text-sm text-slate-500 font-medium leading-relaxed italic">
-                        "{task.description}"
-                      </p>
+                    <div className="p-6 lg:p-8 flex-1">
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        
+                        {/* TASK CONTENT */}
+                        <div className="space-y-4 max-w-2xl">
+                          <div className="flex items-center gap-3">
+                             <h2 className="text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">
+                                {task.title}
+                             </h2>
+                             <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${priorityColors[task.priority]}`}>
+                                {task.priority} Priority
+                             </span>
+                          </div>
 
-                      <div className="flex flex-wrap gap-4 pt-2">
-                         <MetaPill icon={User} label="Intern" value={task.assignedIntern?.name} />
-                         <MetaPill icon={Layers} label="Status" value={task.status} colorBadge={statusColors[task.status]} />
-                         <MetaPill icon={Calendar} label="Deadline" value={new Date(task.deadline).toDateString()} />
-                      </div>
-                    </div>
+                          <p className="text-sm text-slate-500 font-medium leading-relaxed italic">
+                            "{task.description}"
+                          </p>
 
-                    {/* ACTION AREA */}
-                    <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 min-w-40">
-                      <div className="text-center">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Attempts</p>
-                         <p className="text-lg font-black text-slate-700">{task.attempts}</p>
-                      </div>
-
-                      {task.status === "submitted" && task.reviewStatus !== "reviewed" ? (
-                        <button
-                          onClick={() => setSelectedTask(task)}
-                          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-black text-white rounded-xl font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
-                        >
-                          Review <ArrowUpRight size={14}/>
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase">
-                          <CheckCircle size={14}/> {task.status === 'approved' ? 'Completed' : 'Evaluated'}
+                          <div className="flex flex-wrap gap-4 pt-2">
+                             <MetaPill icon={User} label="Intern" value={task.assignedIntern?.name} />
+                             <MetaPill icon={Layers} label="Status" value={task.status} colorBadge={statusColors[task.status]} />
+                             <MetaPill icon={Calendar} label="Deadline" value={new Date(task.deadline).toDateString()} />
+                          </div>
                         </div>
-                      )}
-                    </div>
 
+                        {/* ACTION AREA */}
+                        <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 min-w-40">
+                          <div className="text-center">
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Attempts</p>
+                             <p className="text-lg font-black text-slate-700">{task.attempts}</p>
+                          </div>
+
+                          {task.status === "submitted" && task.reviewStatus !== "reviewed" ? (
+                            <button
+                              onClick={() => setSelectedTask(task)}
+                              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-black text-white rounded-xl font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                            >
+                              Review <ArrowUpRight size={14}/>
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase">
+                              <CheckCircle size={14}/> {task.status === 'approved' ? 'Completed' : 'Evaluated'}
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))
+
+            {/* PAGINATION COMPONENT */}
+            <Pagination 
+                page={currentPage} 
+                totalPages={totalPages} 
+                setPage={setCurrentPage} 
+            />
+          </>
         )}
       </div>
 
@@ -200,7 +221,7 @@ const MentorTasks = () => {
   );
 };
 
-// --- SUB COMPONENTS ---
+// --- SUB COMPONENTS (UNCHANGED) ---
 
 const MiniStat = ({ label, value, icon: Icon, color }) => {
   const colors = {
@@ -231,7 +252,7 @@ const MetaPill = ({ icon: Icon, label, value, colorBadge }) => (
     <div className="flex flex-col">
        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">{label}</span>
        <span className={`text-[11px] font-bold ${colorBadge ? `px-1.5 py-0.5 rounded ${colorBadge} inline-block w-fit mt-0.5` : 'text-slate-700'}`}>
-          {value}
+          {value || "N/A"}
        </span>
     </div>
   </div>

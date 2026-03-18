@@ -43,7 +43,6 @@ const MentorDashboard = () => {
   }, []);
 
   if (loading) return <Loading />;
-
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-12 px-4">
       
@@ -147,7 +146,7 @@ const MentorDashboard = () => {
                 Recent Activity
             </h3>
             
-            <div className="bg-white rounded-4xl border border-slate-200 p-6 shadow-sm divide-y divide-slate-50">
+            <div className="bg-white h-75 rounded-4xl border border-slate-200 p-6 shadow-sm divide-y divide-slate-50">
                 {recentTasks.length > 0 ? (
                     recentTasks.map((task) => (
                         <div key={task._id} className="py-4 first:pt-0 last:pb-0 group cursor-pointer">

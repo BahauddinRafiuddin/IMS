@@ -6,23 +6,26 @@ import {
   Calendar, 
   BookOpen, 
   Clock, 
-  ExternalLink, 
   UserCircle2,
   ChevronRight,
   SearchX
 } from "lucide-react";
 import Loading from "../../components/common/Loading";
+import Pagination from "../../components/common/Pagination"; // Import your component
 
 const MentorInterns = () => {
   const [loading, setLoading] = useState(true);
   const [enrollments, setEnrollments] = useState([]);
+  
+  // PAGINATION STATE
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 1;
 
   useEffect(() => {
     const fetchMentorInterns = async () => {
       try {
         const res = await getMentorInterns();
         const interns = res.interns || [];
-        // Keep your existing filtering logic
         const validInterns = interns.filter((e) => e.program !== null);
         setEnrollments(validInterns);
       } catch (error) {
@@ -33,6 +36,12 @@ const MentorInterns = () => {
     };
     fetchMentorInterns();
   }, []);
+
+  // PAGINATION LOGIC
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentEnrollments = enrollments.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(enrollments.length / itemsPerPage);
 
   if (loading) return <Loading />;
 
@@ -55,14 +64,14 @@ const MentorInterns = () => {
       {/* PAGE HEADER */}
       <div className="border-b border-slate-200 pb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">My Interns</h1>
-        <p className="text-slate-500 mt-1 font-medium italic">
+        <p className="text-slate-500 mt-1 font-medium italic text-sm">
           Managing talent and enrollment across your active programs.
         </p>
       </div>
 
       {/* ENROLLMENT SECTIONS */}
       <div className="space-y-12">
-        {enrollments.map((item) => (
+        {currentEnrollments.map((item) => (
           <div key={item._id} className="group animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* PROGRAM STRIP */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
@@ -91,7 +100,7 @@ const MentorInterns = () => {
               </div>
             </div>
 
-            {/* INTERN CARD (Responsive Table Replacement) */}
+            {/* INTERN CARD */}
             <div className="bg-white rounded-4xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                <div className="grid grid-cols-1 md:grid-cols-12 items-center p-6 gap-6">
                   
@@ -129,12 +138,18 @@ const MentorInterns = () => {
                         <ChevronRight size={20} />
                     </button>
                   </div>
-
                </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* PAGINATION COMPONENT */}
+      <Pagination 
+        page={currentPage} 
+        totalPages={totalPages} 
+        setPage={setCurrentPage} 
+      />
     </div>
   );
 };

@@ -11,11 +11,11 @@ import {
   MessageSquare,
   Star,
   ArrowUpRight,
-  ShieldAlert
 } from "lucide-react";
 import SubmitTaskModal from "../../components/intern/SubmitTaskModal";
 import { toastSuccess, toastError } from "../../utils/toast";
 import Loading from "../../components/common/Loading";
+import Pagination from "../../components/common/Pagination"; // Import your component
 
 const priorityColors = {
   low: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -36,6 +36,10 @@ const InternTasks = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
 
+  // PAGINATION STATE
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2; // Adjust this number based on card size
+
   const fetchMyTasks = async () => {
     try {
       const res = await getMyTasks();
@@ -50,6 +54,12 @@ const InternTasks = () => {
   useEffect(() => {
     fetchMyTasks();
   }, []);
+
+  // PAGINATION LOGIC
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTasks = tasks.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(tasks.length / itemsPerPage);
 
   const handleSubmitTask = async (data) => {
     try {
@@ -77,12 +87,12 @@ const InternTasks = () => {
       {/* HEADER */}
       <div className="border-b border-slate-200 pb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Assignment Feed</h1>
-        <p className="text-slate-500 mt-1 font-medium">Complete tasks and review mentor feedback.</p>
+        <p className="text-slate-500 mt-1 font-medium italic text-sm">Complete tasks and review mentor feedback.</p>
       </div>
 
-      {/* TASK LIST (Mobile & Desktop Unified for Clarity) */}
+      {/* TASK LIST */}
       <div className="space-y-6">
-        {tasks.map((task) => (
+        {currentTasks.map((task) => (
           <div key={task._id} className="group bg-white rounded-4xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
             <div className="flex flex-col lg:flex-row lg:items-stretch">
               
@@ -125,12 +135,12 @@ const InternTasks = () => {
                        />
                     </div>
 
-                    {/* 🔥 MENTOR FEEDBACK SECTION (New) */}
+                    {/* MENTOR FEEDBACK SECTION */}
                     {(task.feedback || task.score !== undefined) && (
                       <div className="mt-6 p-5 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row gap-6">
                         {task.score !== undefined && (
                           <div className="flex flex-col items-center justify-center sm:border-r border-slate-200 pr-0 sm:pr-6">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Score</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Score</span>
                             <div className="flex items-center gap-1 text-amber-500">
                                <Star size={14} className="fill-amber-500" />
                                <span className="text-xl font-black text-slate-800">{task.score}<span className="text-xs text-slate-400">/10</span></span>
@@ -162,19 +172,25 @@ const InternTasks = () => {
                         <ArrowUpRight size={14} />
                       </button>
                     ) : (
-                      <div className="text-center px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
+                      <div className="text-center px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 min-w-28">
                         <CheckCircle size={20} className="mx-auto text-emerald-500 mb-1" />
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Locked</span>
                       </div>
                     )}
                   </div>
-
                 </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* PAGINATION COMPONENT */}
+      <Pagination 
+        page={currentPage} 
+        totalPages={totalPages} 
+        setPage={setCurrentPage} 
+      />
 
       {selectedTask && (
         <SubmitTaskModal
@@ -187,7 +203,6 @@ const InternTasks = () => {
   );
 };
 
-// --- HELPER COMPONENT ---
 const MetaPill = ({ icon: Icon, label, value, colorBadge }) => (
   <div className="flex items-center gap-2">
     <div className="p-1.5 bg-slate-50 text-slate-400 rounded-lg">

@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, ClipboardList, AlignLeft, Layers, User, AlertCircle, Calendar } from "lucide-react";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { createTask } from "../../api/mentor.api";
 
@@ -18,13 +19,11 @@ const CreateTaskModal = ({ programs, onClose, onCreated }) => {
     deadline: "",
   });
 
-  console.log(programs);
   const selectedProgram = programs.find((p) => p._id === form.programId);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // ✅ Deadline validation
     if (name === "deadline") {
       if (value < today) {
         setDeadlineError("Deadline cannot be earlier than today");
@@ -47,9 +46,7 @@ const CreateTaskModal = ({ programs, onClose, onCreated }) => {
 
     try {
       setLoading(true);
-
       const res = await createTask(form);
-
       toastSuccess("Task created successfully");
       onCreated(res.task);
       onClose();
@@ -61,164 +58,145 @@ const CreateTaskModal = ({ programs, onClose, onCreated }) => {
   };
 
   return (
-    <div className="fixed min-h-screen inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-xl rounded-2xl p-6 space-y-6">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-2xl rounded-4xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        
         {/* ================= HEADER ================= */}
-        <div className="flex justify-between items-center border-b pb-4">
-          <h2 className="text-xl font-bold text-gray-800">Create Task</h2>
-
+        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Create New Task</h2>
+            <p className="text-slate-500 text-xs font-medium uppercase tracking-widest mt-1">Assignment Details</p>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-red-500 cursor-pointer"
+            className="p-2 hover:bg-red-50 hover:text-red-500 text-slate-400 rounded-xl transition-all cursor-pointer"
           >
-            <X />
+            <X size={24} />
           </button>
         </div>
 
-        {/* ================= FORM ================= */}
-        <div className="space-y-5">
-          {/* TITLE */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Task Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="Enter task title"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-              focus:ring-2 focus:ring-indigo-300 outline-none"
-            />
-          </div>
+        {/* ================= FORM CONTENT ================= */}
+        <div className="p-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* LEFT COLUMN: PRIMARY INFO */}
+            <div className="md:col-span-2 space-y-5">
+              <FormLabel icon={ClipboardList} label="Task Title" required />
+              <input
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                placeholder="e.g. Implement User Authentication"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-slate-700 font-medium focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+              />
+            </div>
 
-          {/* DESCRIPTION */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              rows="3"
-              placeholder="Describe the task..."
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-              focus:ring-2 focus:ring-indigo-300 outline-none resize-none"
-            />
-          </div>
+            <div className="md:col-span-2 space-y-5">
+              <FormLabel icon={AlignLeft} label="Task Description" />
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows="3"
+                placeholder="Briefly explain the requirements..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-slate-700 font-medium focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all resize-none placeholder:text-slate-400"
+              />
+            </div>
 
-          {/* PROGRAM */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Program <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="programId"
-              value={form.programId}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-              focus:ring-2 focus:ring-indigo-300 outline-none cursor-pointer"
-            >
-              <option value="">Select program</option>
-              {programs.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* RIGHT COLUMN: ASSIGNMENT SETTINGS */}
+            <div className="space-y-5">
+              <FormLabel icon={Layers} label="Target Program" required />
+              <select
+                name="programId"
+                value={form.programId}
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-slate-700 font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none cursor-pointer appearance-none"
+              >
+                <option value="">Select program</option>
+                {programs.map((p) => (
+                  <option key={p._id} value={p._id}>{p.title}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* INTERN */}
-          {selectedProgram && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Intern <span className="text-red-500">*</span>
-              </label>
+            <div className="space-y-5">
+              <FormLabel icon={User} label="Assign Intern" required />
               <select
                 name="internId"
                 value={form.internId}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                focus:ring-2 focus:ring-indigo-300 outline-none cursor-pointer"
+                disabled={!selectedProgram}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-slate-700 font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
               >
                 <option value="">Select intern</option>
                 {selectedProgram?.interns?.length > 0 ? (
                   selectedProgram.interns.map((i) => (
-                    <option key={i.intern._id} value={i.intern._id}>
-                      {i.intern.name}
-                    </option>
+                    <option key={i.intern._id} value={i.intern._id}>{i.intern.name}</option>
                   ))
                 ) : (
                   <option disabled>No interns enrolled</option>
                 )}
               </select>
             </div>
-          )}
 
-          {/* PRIORITY */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Priority
-            </label>
-            <select
-              name="priority"
-              value={form.priority}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-              focus:ring-2 focus:ring-indigo-300 outline-none cursor-pointer"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
+            <div className="space-y-5">
+              <FormLabel icon={AlertCircle} label="Priority Level" />
+              <select
+                name="priority"
+                value={form.priority}
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-slate-700 font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none cursor-pointer appearance-none"
+              >
+                <option value="low">Low Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="high">High Priority</option>
+              </select>
+            </div>
 
-          {/* DEADLINE */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Deadline <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              name="deadline"
-              min={today}
-              value={form.deadline}
-              onChange={handleChange}
-              className={`w-full border rounded-lg px-4 py-2.5 outline-none
-              focus:ring-2 ${
-                deadlineError
-                  ? "border-red-500 ring-red-200"
-                  : "border-gray-300 focus:ring-indigo-300"
-              } cursor-pointer`}
-            />
-
-            {deadlineError && (
-              <p className="text-red-500 text-xs mt-1">{deadlineError}</p>
-            )}
+            <div className="space-y-5">
+              <FormLabel icon={Calendar} label="Completion Deadline" required />
+              <input
+                type="date"
+                name="deadline"
+                min={today}
+                value={form.deadline}
+                onChange={handleChange}
+                className={`w-full bg-slate-50 border rounded-2xl px-5 py-3 font-bold outline-none transition-all cursor-pointer
+                ${deadlineError ? "border-red-500 ring-4 ring-red-500/10 text-red-600" : "border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-700"}`}
+              />
+              {deadlineError && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest mt-1 ml-2">{deadlineError}</p>}
+            </div>
           </div>
         </div>
 
         {/* ================= ACTIONS ================= */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="p-8 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-4 bg-slate-50/30">
           <button
             onClick={onClose}
-            className="px-5 py-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
+            className="px-8 py-3.5 border border-slate-200 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-white hover:shadow-md transition-all cursor-pointer"
           >
-            Cancel
+            Discard
           </button>
 
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg cursor-pointer disabled:opacity-60"
+            className="px-10 py-3.5 bg-indigo-600 hover:bg-black text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-indigo-100 active:scale-95 disabled:opacity-70 cursor-pointer"
           >
-            {loading ? "Creating..." : "Create Task"}
+            {loading ? "Processing..." : "Create Task"}
           </button>
         </div>
       </div>
     </div>
   );
 };
+
+// Helper Sub-component for clean Labels
+const FormLabel = ({ icon: Icon, label, required }) => (
+  <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 ml-1">
+    <Icon size={14} className="text-indigo-500" />
+    {label} {required && <span className="text-red-500 ml-0.5">*</span>}
+  </label>
+);
 
 export default CreateTaskModal;
