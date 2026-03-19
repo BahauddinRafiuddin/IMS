@@ -42,6 +42,7 @@ const Programs = () => {
 
   const fetchPrograms = async () => {
     try {
+      // setLoading(true)
       const res = await getAllPrograms(page, limit, search);
       setPrograms(res.programs || []);
       setTotalPages(res.totalPages || 1);

@@ -5,20 +5,19 @@ export const getMenorDashboard = async () => {
   return res.data
 }
 
-export const getMentorPrograms = async () => {
-  const res = await api.get('/mentor/programs')
+export const getMentorPrograms = async (page,limit) => {
+  const res = await api.get(`/mentor/programs?page=${page}&limit=${limit}`)
   return res.data
 }
 
-export const getMentorInterns = async () => {
-  const res = await api.get('/mentor/interns')
+export const getMentorInterns = async (page,limit) => {
+  const res = await api.get(`/mentor/interns?page=${page}&limit=${limit}`)
   return res.data
 }
-
-export const getMentorTasks = async () => {
-  const res = await api.get('/mentor/tasks')
-  return res.data
-}
+export const getMentorTasks = async (page, limit, status) => {
+  const res = await api.get(`/mentor/tasks?page=${page}&limit=${limit}&status=${status}`);
+  return res.data;
+};
 
 export const reviewTask = async (taskId, data) => {
   const res = await api.put(`/mentor/task/${taskId}/review`, data)

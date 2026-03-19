@@ -32,6 +32,28 @@ export const getAllMentors = async (page, limit, search) => {
   return res.data
 }
 
+export const getCompanyReviews = async (page, limit, minRating) => {
+  const res = await api.get(`/admin/reviews?page=${page}&limit=${limit}&minRating=${minRating}`)
+  return res.data
+}
+
+export const exportReviewsApi = async (rating, format = 'excel') => {
+  const res = await api.get(
+    `/admin/reviews/export?rating=${rating || ""}&format=${format}`,
+    { responseType: "blob" }
+  );
+
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  const ext = format === 'excel' ? 'xlsx' : 'pdf';
+  link.setAttribute("download", `Reviews_Report.${ext}`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
 export const exportMentorApi = async (search, format) => {
   const res = await api.get(
     `/admin/mentors/export?search=${search}&format=${format}`,
@@ -72,12 +94,36 @@ export const deleteMentorById = async (mentorId) => {
   const res = await api.delete(`/admin/mentor/${mentorId}/delete`)
   return res.data
 }
+
 export const getAdminFinanceOverview = async (filters = {}) => {
   const query = new URLSearchParams(filters).toString()
   const res = await api.get(`/admin/finance-overview?${query}`);
   return res.data;
 }
-export const getCompanyReviews = async () => {
-  const res = await api.get('/admin/reviews')
-  return res.data
-}
+
+export const exportFinanceApi = async (filters, format = 'excel') => {
+  // Convert filter object to query string
+  const queryString = new URLSearchParams({
+    ...filters,
+    format
+  }).toString();
+
+  const res = await api.get(`/admin/finance/export?${queryString}`, {
+    responseType: "blob", // Critical for downloading binary data
+  });
+
+  // Logic to trigger browser download
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+
+  // Set file extension based on format
+  const extension = format === 'excel' ? 'xlsx' : 'pdf';
+  link.setAttribute("download", `Finance_Report_${new Date().getTime()}.${extension}`);
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+

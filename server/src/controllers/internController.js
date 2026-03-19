@@ -90,11 +90,20 @@ export const startInternship = async (req, res) => {
 export const getMyTask = async (req, res) => {
   try {
     const internId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    const status = req.query.status;
+
+    let filter = {};
+    if (status) {
+      filter.status = status;
+    }
 
     if (req.user.role !== "intern") {
       return res.status(403).json({
         success: false,
-        message: "Only interns can access tasks"
+        message: "Only interns can access tasks",
       });
     }
 
@@ -103,54 +112,56 @@ export const getMyTask = async (req, res) => {
     if (!intern) {
       return res.status(404).json({
         success: false,
-        message: "Intern not found"
+        message: "Intern not found",
       });
     }
 
     if (!intern.isActive) {
       return res.status(403).json({
         success: false,
-        message: "Intern is not activated yet"
+        message: "Intern is not activated yet",
       });
     }
 
     // 🔐 find programs where intern is enrolled
     const enrollments = await Enrollment.find({
       intern: internId,
-      status: { $in: ["approved", "in_progress", "completed"] }
+      status: { $in: ["approved", "in_progress", "completed"] },
     }).select("program");
 
-    const programIds = enrollments.map(e => e.program);
+    const programIds = enrollments.map((e) => e.program);
 
-    const tasks = await Task.find({
+    // Build query object
+    const query = {
       assignedIntern: internId,
-      program: { $in: programIds }
-    })
+      program: { $in: programIds },
+      ...filter,
+    };
+
+    const tasks = await Task.find(query)
       .populate("program", "title domain")
       .populate("mentor", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    if (!tasks.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No tasks assigned yet"
-      });
-    }
+    const total = await Task.countDocuments(query);
 
     return res.status(200).json({
       success: true,
-      message: "Tasks fetched successfully",
-      tasks
+      message: tasks.length > 0 ? "Tasks fetched successfully" : "No tasks found",
+      tasks,
+      totalPages: Math.ceil(total / limit),
+      total,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching tasks"
+      message: "Server error while fetching tasks",
     });
   }
-}
+};
 
 // Submit task
 export const submitTask = async (req, res) => {
@@ -381,7 +392,7 @@ export const getMyReview = async (req, res) => {
   try {
     const review = await Review.findOne({
       company: req.user.company,
-      intern:req.user.id
+      intern: req.user.id
     })
       .populate("intern", "name")
       .populate("program", "title")

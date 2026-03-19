@@ -12,16 +12,18 @@ import {
   History,
   PieChart,
 } from "lucide-react";
-import { getAdminFinanceOverview } from "../../api/admin.api";
+import { exportFinanceApi, getAdminFinanceOverview } from "../../api/admin.api";
 import StatCard from "../../components/ui/StatCard";
 import * as XLSX from "xlsx";
 import { toastError } from "../../utils/toast";
 import Loading from "../../components/common/Loading";
+import Pagination from "../../components/common/Pagination";
 
 const AdminFinance = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [page, setPage] = useState(1);
 
   const [filters, setFilters] = useState({
     commission: "",
@@ -29,10 +31,13 @@ const AdminFinance = () => {
     endDate: "",
   });
 
-  const fetchFinance = async () => {
+  const fetchFinance = async (currentPage = page) => {
     try {
       setLoading(true);
-      const res = await getAdminFinanceOverview(filters);
+      const res = await getAdminFinanceOverview({
+        ...filters,
+        page: currentPage,
+      });
       setData(res);
     } catch (err) {
       console.error(err);
@@ -43,44 +48,36 @@ const AdminFinance = () => {
 
   useEffect(() => {
     fetchFinance();
-  }, []);
+  }, [page]);
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  const applyFilters = () => fetchFinance();
+  const applyFilters = () => {
+    setPage(1); // Reset to page 1 when searching
+    fetchFinance(1);
+  };
 
   const resetFilters = () => {
     setFilters({ commission: "", startDate: "", endDate: "" });
+    setPage(1);
   };
 
-  const downloadExcel = () => {
-    if (!transactions.length) return toastError("No data to export");
-    const sheetData = data.transactions.map((txn) => ({
-      Intern: txn.intern?.name,
-      Program: txn.program?.title,
-      Amount: txn.totalAmount,
-      Commission: txn.superAdminCommission,
-      "Commission %": txn.commissionPercentage,
-      "Company Earning": txn.companyEarning,
-      Method: txn.paymentMethod,
-      Date: new Date(txn.createdAt).toLocaleDateString(),
-    }));
-    const worksheet = XLSX.utils.json_to_sheet(sheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
-    XLSX.writeFile(
-      workbook,
-      `Finance_Report_${new Date().toLocaleDateString()}.xlsx`,
-    );
+  const handleExport = async (format) => {
+    try {
+      await exportFinanceApi(filters, format);
+    } catch (err) {
+      console.error("Export failed", err);
+      toastError("Failed to export report");
+    }
   };
 
   if (loading) {
     return <Loading />;
   }
 
-  const { summary, transactions, commissionBreakdown } = data;
+  const { summary, transactions, commissionBreakdown, pagination } = data;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
@@ -95,7 +92,7 @@ const AdminFinance = () => {
           </p>
         </div>
         <button
-          onClick={downloadExcel}
+          onClick={() => handleExport("excel")}
           className="flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
         >
           <Download size={18} className="text-indigo-600" />
@@ -363,6 +360,14 @@ const AdminFinance = () => {
               <p>No financial records match your filters.</p>
             </div>
           )}
+        </div>
+        {/* PAGINATION COMPONENT */}
+        <div className="pb-6 px-4">
+          <Pagination
+            page={page}
+            totalPages={pagination?.totalPages || 1}
+            setPage={setPage}
+          />
         </div>
       </div>
     </div>

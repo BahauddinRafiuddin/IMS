@@ -1,7 +1,7 @@
 import express from 'express'
 import { roleMiddleware } from '../middlewares/roleMiddleware.js'
 import { authMiddleware } from '../middlewares/authMiddleware.js'
-import { changeProgramStatus, createIntern, createMentor, createProgram, deleteMentorById, exportInterns, exportMentors, getAdminDashboard, getAdminFinanceOverview, getAllInterns, getAllMentors, getAllPrograms, getAvailableInterns, getCompanyReviews, updateInternStatus, updateProgram ,exportPrograms} from '../controllers/adminController.js'
+import { changeProgramStatus, createIntern, createMentor, createProgram, deleteMentorById, exportInterns, exportMentors, getAdminDashboard, getAdminFinanceOverview, getAllInterns, getAllMentors, getAllPrograms, getAvailableInterns, getCompanyReviews, updateInternStatus, updateProgram ,exportPrograms,exportFinanceReport, exportCompanyReviews} from '../controllers/adminController.js'
 
 const adminRouter = express.Router()
 
@@ -12,6 +12,7 @@ adminRouter.post('/intern', authMiddleware, roleMiddleware('admin'), createInter
 adminRouter.post('/mentor', authMiddleware, roleMiddleware("admin"), createMentor)
 
 adminRouter.get('/finance-overview', authMiddleware, roleMiddleware('admin'), getAdminFinanceOverview)
+adminRouter.get('/finance/export',authMiddleware,roleMiddleware("admin"),exportFinanceReport)
 
 // Admin AuthRouter
 adminRouter.get('/interns', authMiddleware, roleMiddleware("admin"), getAllInterns)
@@ -36,5 +37,6 @@ adminRouter.put('/program/:progId', authMiddleware, roleMiddleware("admin"), upd
 // adminRouter.put('/program/:progId/enroll', authMiddleware, roleMiddleware('admin'), enrollIntern)
 
 adminRouter.get('/reviews', authMiddleware, roleMiddleware('admin'), getCompanyReviews)
+adminRouter.get('/reviews/export',authMiddleware,roleMiddleware('admin'),exportCompanyReviews)
 
 export default adminRouter

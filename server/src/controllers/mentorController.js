@@ -1,6 +1,6 @@
 import Enrollment from "../models/Enrollment.js";
 import Task from "../models/Task.js";
-import { isValidObjectId } from "mongoose"
+import mongoose, { isValidObjectId } from "mongoose"
 import InternshipProgram from "../models/InternshipProgram.js"
 import User from "../models/User.js"
 
@@ -297,7 +297,9 @@ export const reviewTask = async (req, res) => {
 export const getMentorInterns = async (req, res) => {
   try {
     const mentorId = req.user.id;
-
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 5
+    const skip = (page - 1) * limit;
     const mentor = await User.findById(mentorId);
 
     if (!mentor || mentor.role !== "mentor") {
@@ -313,13 +315,22 @@ export const getMentorInterns = async (req, res) => {
     })
       .populate("intern", "name email")
       .populate("program", "title domain durationInWeeks startDate endDate status")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
 
+    const total = await Enrollment.countDocuments({
+      mentor: mentorId,
+      status: { $in: ["approved", "in_progress"] }
+    })
     if (!enrollments.length) {
       return res.status(404).json({ success: false, message: "No Interns Found" })
     }
     return res.status(200).json({
       success: true,
-      interns: enrollments
+      interns: enrollments,
+      total,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error(error);
@@ -416,6 +427,9 @@ export const getMentorDashboard = async (req, res) => {
 export const getMentorPrograms = async (req, res) => {
   try {
     const mentorId = req.user.id;
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 5
+    const skip = (page - 1) * limit;
 
     const mentor = await User.findById(mentorId);
 
@@ -431,7 +445,14 @@ export const getMentorPrograms = async (req, res) => {
       mentor: mentorId,
       company: req.user.company
     })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
 
+    const total = await InternshipProgram.countDocuments({
+      mentor: mentorId,
+      company: req.user.company
+    })
     if (!programs.length) {
       return res.status(404).json({ success: false, message: "No Programs Found" })
     }
@@ -451,7 +472,13 @@ export const getMentorPrograms = async (req, res) => {
       })
     );
 
-    return res.status(200).json({ success: true, message: "Mentor Programs Found Successfully", programs: programsWithInterns })
+    return res.status(200).json({
+      success: true,
+      message: "Mentor Programs Found Successfully",
+      programs: programsWithInterns,
+      totalPages: Math.ceil(total / limit),
+      total
+    })
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -464,71 +491,80 @@ export const getMentorPrograms = async (req, res) => {
 export const getMentorTasks = async (req, res) => {
   try {
     const mentorId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    const { status } = req.query;
 
-    const mentor = await User.findById(mentorId);
-
-    if (!mentor || mentor.role !== "mentor") {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized"
-      });
+    // 1. Build the dynamic match object for Tasks
+    const taskMatch = { mentor: new mongoose.Types.ObjectId(mentorId) };
+    if (status && status !== 'all') {
+      taskMatch.status = status;
     }
 
-    const mentorTasks = await Task.find({ mentor: mentorId })
-      .populate("assignedIntern", "name email")
-      .populate({
-        path: "enrollment",
-        match: { status: { $ne: "completed" } },
-        select: "status"
-      }).sort({ createdAt: -1 })
+    // 2. Aggregation Pipeline
+    const pipeline = [
+      { $match: taskMatch },
+      // Join with Enrollment collection
+      {
+        $lookup: {
+          from: "enrollments", // Make sure this matches your MongoDB collection name
+          localField: "enrollment",
+          foreignField: "_id",
+          as: "enrollmentData"
+        }
+      },
+      { $unwind: "$enrollmentData" },
+      // FILTER: Only keep tasks where enrollment is NOT completed
+      { $match: { "enrollmentData.status": { $ne: "completed" } } },
+      { $sort: { createdAt: -1 } }
+    ];
 
-    // remove tasks with completed enrollment
-    const filteredTasks = mentorTasks.filter(t => t.enrollment);
+    // 3. Get total count for the filtered results
+    const countResult = await Task.aggregate([...pipeline, { $count: "total" }]);
+    const totalFiltered = countResult.length > 0 ? countResult[0].total : 0;
 
-    if (!filteredTasks.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No tasks Found"
-      });
-    }
+    // 4. Get the actual paginated data
+    const mentorTasks = await Task.aggregate([
+      ...pipeline,
+      { $skip: skip },
+      { $limit: limit },
+      // Re-populate assignedIntern (since lookup works differently than populate)
+      {
+        $lookup: {
+          from: "users",
+          localField: "assignedIntern",
+          foreignField: "_id",
+          as: "assignedIntern"
+        }
+      },
+      { $unwind: { path: "$assignedIntern", preserveNullAndEmptyArrays: true } }
+    ]);
 
-    const totalTasks = filteredTasks.length;
-
-    const pendingReviews = filteredTasks.filter(
-      t => t.reviewStatus === "pending" && t.status === "submitted"
-    ).length;
-
-    const approvedTasks = filteredTasks.filter(
-      t => t.status === "approved"
-    ).length;
-
-    const rejectedTasks = filteredTasks.filter(
-      t => t.status === "rejected"
-    ).length;
-
-    const lateSubmissions = filteredTasks.filter(
-      t => t.isLate === true
-    ).length;
+    // 5. Global Stats (across all tasks, regardless of enrollment/pagination)
+    const allTasks = await Task.find({ mentor: mentorId });
+    const stats = {
+      totalTasks: allTasks.length,
+      pendingReviews: allTasks.filter(t => t.reviewStatus === "pending" && t.status === "submitted").length,
+      approvedTasks: allTasks.filter(t => t.status === "approved").length,
+      rejectedTasks: allTasks.filter(t => t.status === "rejected").length,
+      lateSubmissions: allTasks.filter(t => t.isLate === true).length,
+    };
 
     return res.status(200).json({
       success: true,
-      message: "tasks found successfully",
-      mentorTasks: filteredTasks,
-      stats: {
-        totalTasks,
-        pendingReviews,
-        rejectedTasks,
-        lateSubmissions,
-        approvedTasks
+      mentorTasks,
+      stats,
+      pagination: {
+        total: totalFiltered,
+        page,
+        totalPages: Math.ceil(totalFiltered / limit),
       }
     });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error while fetching mentor tasks"
-    });
+    console.error("Error in getMentorTasks:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

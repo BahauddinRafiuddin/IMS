@@ -1,7 +1,7 @@
 import api from "./axios"
 
-export const getMyTasks = async () => {
-  const res = await api.get('/intern/task')
+export const getMyTasks = async (page, limit, status) => {
+  const res = await api.get(`/intern/task?page=${page}&limit=${limit}&status=${status}`)
   return res.data
 }
 
@@ -28,7 +28,7 @@ export const checkCertificateEligibility = async (programId) => {
 export const generateCertificate = async (programId) => {
   const res = await api.get(
     `/certificate/download/${programId}`,
-    { responseType: "blob" }   
+    { responseType: "blob" }
   );
   return res.data;
 };

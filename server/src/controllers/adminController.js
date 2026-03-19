@@ -233,7 +233,44 @@ export const getAllMentors = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+export const getCompanyReviews = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const rating = parseInt(req.query.rating)
+    const skip = (page - 1) * limit;
 
+    let filter = {
+      company: req.user.company,
+      status: "approved"
+    }
+
+    // Filter by rating (e.g., 5 stars and above, or exact)
+    if (rating) {
+      filter.rating = { $gte: Number(rating) };
+    }
+    const reviews = await Review.find(filter)
+      .populate("intern", "name")
+      .populate("program", "title")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+
+    const total = await Review.countDocuments(filter);
+
+    res.json({
+      success: true,
+      reviews,
+      totalPages: Math.ceil(total / limit),
+      total
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
 // EXPORT MENTORS (Using your helper file)
 export const exportMentors = async (req, res) => {
   try {
@@ -965,11 +1002,11 @@ export const refundPayment = async (req, res) => {
       message: error.message
     });
   }
-};
+}
 
 export const getAdminFinanceOverview = async (req, res) => {
   try {
-    const { commission, startDate, endDate } = req.query
+    const { commission, startDate, endDate, page = 1, limit = 2 } = req.query
     const companyId = req.user.company
 
     let filter = {
@@ -980,6 +1017,8 @@ export const getAdminFinanceOverview = async (req, res) => {
     if (commission) {
       filter.commissionPercentage = Number(commission)
     }
+    const totalCount = await Payment.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limit);
 
     // Filter by date range
     if (startDate && endDate) {
@@ -993,10 +1032,14 @@ export const getAdminFinanceOverview = async (req, res) => {
       .populate("intern", "name email")
       .populate("program", "title price")
       .sort({ createdAt: -1 })
+      .skip((Number(page) - 1) * Number(limit))
+      .limit(Number(limit));
 
-    const totalRevenue = payments.reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalCommission = payments.reduce((sum, p) => sum + p.superAdminCommission, 0);
-    const totalCompanyEarning = payments.reduce((sum, p) => sum + p.companyEarning, 0);
+    const allPaymentsForStats = await Payment.find(filter);
+    const totalRevenue = allPaymentsForStats.reduce((sum, p) => sum + p.totalAmount, 0);
+    const totalCommission = allPaymentsForStats.reduce((sum, p) => sum + p.superAdminCommission, 0);
+    const totalCompanyEarning = allPaymentsForStats.reduce((sum, p) => sum + p.companyEarning, 0);
+
     const breakdown = await Payment.aggregate([
       { $match: filter },
       {
@@ -1016,10 +1059,15 @@ export const getAdminFinanceOverview = async (req, res) => {
         totalRevenue,
         totalCommission,
         totalCompanyEarning,
-        totalTransactions: payments.length
+        totalTransactions: totalCount
       },
       transactions: payments,
-      commissionBreakdown: breakdown
+      commissionBreakdown: breakdown,
+      pagination: {
+        currentPage: Number(page),
+        totalPages,
+        totalCount
+      }
     })
   } catch (error) {
     res.status(500).json({
@@ -1029,24 +1077,103 @@ export const getAdminFinanceOverview = async (req, res) => {
   }
 }
 
-export const getCompanyReviews = async (req, res) => {
+export const exportFinanceReport = async (req, res) => {
   try {
-    const reviews = await Review.find({
-      company: req.user.company,
-      status: "approved"
-    })
+    const { commission, startDate, endDate, format = "excel" } = req.query;
+    const companyId = req.user.company;
+
+    let filter = {
+      paymentStatus: "success",
+      company: new mongoose.Types.ObjectId(companyId)
+    };
+
+    if (commission) filter.commissionPercentage = Number(commission);
+    if (startDate && endDate) {
+      filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    }
+
+    // Fetch ALL matching transactions for the report
+    const payments = await Payment.find(filter)
       .populate("intern", "name")
       .populate("program", "title")
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 });
 
-    res.json({
-      success: true,
-      reviews
-    })
+    // Map data to flat objects for Excel/PDF
+    const reportData = payments.map((p) => ({
+      intern: p.intern?.name || "N/A",
+      program: p.program?.title || "N/A",
+      amount: `₹${p.totalAmount}`,
+      commission: `₹${p.superAdminCommission}`,
+      rate: `${p.commissionPercentage}%`,
+      earning: `₹${p.companyEarning}`,
+      method: p.paymentMethod,
+      date: new Date(p.createdAt).toLocaleDateString("en-IN"),
+    }));
+
+    const columns = [
+      { header: "Intern Name", key: "intern", width: 25 },
+      { header: "Program", key: "program", width: 30 },
+      { header: "Total Amount", key: "amount", width: 15 },
+      { header: "Platform Fee", key: "commission", width: 15 },
+      { header: "Rate", key: "rate", width: 10 },
+      { header: "Net Earning", key: "earning", width: 15 },
+      { header: "Method", key: "method", width: 15 },
+      { header: "Date", key: "date", width: 15 },
+    ];
+
+    await exportToFile({
+      res,
+      data: reportData,
+      format,
+      fileName: `Finance_Report_${new Date().getTime()}`,
+      columns,
+    });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    })
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
+
+export const exportCompanyReviews = async (req, res) => {
+  try {
+    const { rating, format = "excel" } = req.query;
+    const companyId = req.user.company;
+
+    let filter = { company: companyId,status: "approved" };
+
+    // Filter by rating (e.g., 5 stars and above, or exact)
+    if (rating) {
+      filter.rating = { $gte: Number(rating) };
+    }
+
+    const reviews = await Review.find(filter)
+      .populate("intern", "name")
+      .populate("program", "title")
+      .sort({ createdAt: -1 });
+
+    const reportData = reviews.map((r) => ({
+      intern: r.intern?.name || "N/A",
+      program: r.program?.title || "N/A",
+      rating: `${r.rating} Stars`,
+      comment: r.comment || "No comment",
+      date: new Date(r.createdAt).toLocaleDateString("en-IN"),
+    }));
+
+    const columns = [
+      { header: "Intern Name", key: "intern", width: 25 },
+      { header: "Program", key: "program", width: 30 },
+      { header: "Rating", key: "rating", width: 15 },
+      { header: "Comment", key: "comment", width: 40 },
+      { header: "Date", key: "date", width: 15 },
+    ];
+
+    await exportToFile({
+      res,
+      data: reportData,
+      format,
+      fileName: `Reviews_Report_${new Date().getTime()}`,
+      columns,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

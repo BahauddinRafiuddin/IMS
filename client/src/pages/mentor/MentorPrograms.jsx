@@ -22,17 +22,18 @@ import ConfirmModal from "../../components/common/ConfirmModal";
 const MentorPrograms = () => {
   const [loading, setLoading] = useState(true);
   const [programs, setPrograms] = useState([]);
-  const [expandedProgram, setExpandedProgram] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 2;
+  const [page, setPage] = useState(1);
+  const limit = 1;
+  const [totalPages, setTotalPages] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEnrollment, setSelectedEnrollment] = useState(null);
 
   useEffect(() => {
     const fetchMentorPrograms = async () => {
       try {
-        const res = await getMentorPrograms();
+        const res = await getMentorPrograms(page,limit);
         setPrograms(res.programs || []);
+        setTotalPages(res.totalPages)
       } catch (error) {
         console.error(error);
       } finally {
@@ -40,7 +41,7 @@ const MentorPrograms = () => {
       }
     };
     fetchMentorPrograms();
-  }, []);
+  }, [page,limit]);
 
   const handleComplete = async () => {
     try {
@@ -56,17 +57,12 @@ const MentorPrograms = () => {
         })),
       );
       toastSuccess(res.message || "Internship marked as completed ✅");
-      setSelectedEnrollment(null)
+      setSelectedEnrollment(null);
     } catch (error) {
       console.log(error);
       toastError(error.response?.data?.message || "Something went wrong");
     }
   };
-  // Calculate indices
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentPrograms = programs.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(programs.length / itemsPerPage);
   if (loading) return <Loading />;
 
   if (!programs.length) {
@@ -80,7 +76,7 @@ const MentorPrograms = () => {
       </div>
     );
   }
-  console.log(programs[1]);
+  // console.log(programs[1]);
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-12 px-4">
       {selectedEnrollment && (
@@ -103,7 +99,7 @@ const MentorPrograms = () => {
 
       {/* PROGRAM GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {currentPrograms.map((program) => (
+        {programs.map((program) => (
           <div
             key={program._id}
             className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
@@ -242,9 +238,9 @@ const MentorPrograms = () => {
         ))}
       </div>
       <Pagination
-        page={currentPage}
+        page={page}
         totalPages={totalPages}
-        setPage={setCurrentPage}
+        setPage={setPage}
       />
     </div>
   );
