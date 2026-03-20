@@ -121,7 +121,7 @@ const InternTasks = () => {
               {/* Click-outside overlay */}
               <div className="fixed inset-0 z-10" onClick={() => setIsFilterOpen(false)} />
               
-              <div className="absolute top-full mt-3 right-0 w-56 bg-white border border-slate-100 rounded-[1.5rem] shadow-2xl shadow-indigo-100/50 p-2 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute top-full mt-3 right-0 w-56 bg-white border border-slate-100 rounded-3xl shadow-2xl shadow-indigo-100/50 p-2 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="px-3 py-2 mb-1 border-b border-slate-50">
                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Filter by Status</p>
                 </div>
