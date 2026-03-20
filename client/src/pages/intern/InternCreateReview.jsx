@@ -24,7 +24,7 @@ const InternCreateReview = () => {
       setPageLoading(false);
     }
   };
-  console.log(myReview);
+  // console.log(myReview);
   useEffect(() => {
     fetchMyReview();
   }, []);
@@ -53,7 +53,7 @@ const InternCreateReview = () => {
     }
   };
 
-  // ================= RENDER STARS =================
+  // ================= RENDER STARS ================= 
   const renderStars = (value) => {
     return [...Array(5)].map((_, i) => (
       <Star
