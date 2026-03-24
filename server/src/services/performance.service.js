@@ -37,8 +37,8 @@ export const calculateInternPerformanceService = async (internId, programId) => 
 
     if (completionPercentage >= 85) grade = "A+"
     else if (completionPercentage >= 70) grade = "A"
-    else if (completionPercentage >= 55) grade = "B"
-    else if (completionPercentage >= 40) grade = "C"
+    else if (completionPercentage >= 55) grade = "B";
+    else if (completionPercentage >= 40) grade = "C";
 
     return { totalTasks, submittedTasks, approvedTasks, pendingTasks ,rejectedTasks, lateSubmissions, averageScore, completionPercentage, grade }
 
