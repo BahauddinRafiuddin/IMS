@@ -813,7 +813,7 @@ export const createMentor = async (req, res) => {
       company: req.user.company,
       isActive: true
     })
-    sendEmail(
+    await sendEmail(
       email,
       "Mentor Account Created",
       `
@@ -857,7 +857,7 @@ export const createIntern = async (req, res) => {
       company: req.user.company,
       isActive: true
     })
-    sendEmail(
+    await sendEmail(
       email,
       "Intern Account Created",
       `
