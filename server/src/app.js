@@ -17,7 +17,7 @@ const app = express()
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://ims-frontend.onrender.com"
+    "https://ims-frontend-3pzv.onrender.com"
   ],
   credentials: true
 }))
