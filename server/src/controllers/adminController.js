@@ -813,10 +813,6 @@ export const createMentor = async (req, res) => {
       company: req.user.company,
       isActive: true
     })
-    res.status(201).json({
-      success: true,
-      message: "Mentor created and email sent"
-    })
     sendEmail(
       email,
       "Mentor Account Created",
@@ -828,6 +824,11 @@ export const createMentor = async (req, res) => {
         <p>Please change your password after first login.</p>
       `
     )
+    res.status(201).json({
+      success: true,
+      message: "Mentor created and email sent"
+    })
+
 
   } catch (error) {
     console.log(error)
@@ -856,10 +857,6 @@ export const createIntern = async (req, res) => {
       company: req.user.company,
       isActive: true
     })
-    res.status(201).json({
-      success: true,
-      message: "Intern created and email sent"
-    })
     sendEmail(
       email,
       "Intern Account Created",
@@ -871,6 +868,11 @@ export const createIntern = async (req, res) => {
         <p>Please change your password after first login.</p>
       `
     )
+    res.status(201).json({
+      success: true,
+      message: "Intern created and email sent"
+    })
+
   } catch (error) {
     console.log(error)
     res.status(500).json({
@@ -1138,7 +1140,7 @@ export const exportCompanyReviews = async (req, res) => {
     const { rating, format = "excel" } = req.query;
     const companyId = req.user.company;
 
-    let filter = { company: companyId,status: "approved" };
+    let filter = { company: companyId, status: "approved" };
 
     // Filter by rating (e.g., 5 stars and above, or exact)
     if (rating) {

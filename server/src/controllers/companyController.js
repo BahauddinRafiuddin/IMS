@@ -113,7 +113,19 @@ export const createCompany = async (req, res) => {
       company: company._id,
       isActive: true
     });
-
+    // 📧 Send Email with Credentials
+    sendEmail(
+      adminEmail,
+      "Your IMS Admin Account Created",
+      `
+        <h2>Welcome to IMS Platform</h2>
+        <p>Your admin account has been created successfully.</p>
+        <p><strong>Company:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${adminEmail}</p>
+        <p><strong>Password:</strong> ${tempPassword}</p>
+        <p>Please login and change your password immediately.</p>
+      `
+    );
     res.status(201).json({
       success: true,
       message: "Company and Admin created successfully",
@@ -128,19 +140,7 @@ export const createCompany = async (req, res) => {
         email: admin.email
       }
     });
-    // 📧 Send Email with Credentials
-    sendEmail(
-      adminEmail,
-      "Your IMS Admin Account Created",
-      `
-        <h2>Welcome to IMS Platform</h2>
-        <p>Your admin account has been created successfully.</p>
-        <p><strong>Company:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${adminEmail}</p>
-        <p><strong>Password:</strong> ${tempPassword}</p>
-        <p>Please login and change your password immediately.</p>
-      `
-    );
+
 
   } catch (error) {
     console.error(error);
