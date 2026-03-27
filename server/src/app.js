@@ -14,7 +14,13 @@ import superAdminRouter from './routes/superAdminRoutes.js'
 import userRouter from './routes/userRoutes.js'
 
 const app = express()
-app.use(cors())
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://ims-frontend.onrender.com"
+  ],
+  credentials: true
+}))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 
