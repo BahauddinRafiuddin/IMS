@@ -16,7 +16,7 @@ export const sendEmail = async (to, subject, html) => {
   });
 
   await transporter.sendMail({
-    from: `"IMS Platform" <${process.env.BREVO_USER}>`,
+    from: `"IMS Platform" <rafikamaan123@gmail.com>`,
     to,
     subject,
     html
